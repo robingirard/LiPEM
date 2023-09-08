@@ -1,0 +1,21 @@
+name : LEAP
+channels:
+  - conda-forge
+  - defaults
+dependencies :
+    - python>=3.9
+    - jupyter
+    - pip
+    - scipy
+    - openpyxl
+    - pandas
+    - plotly
+    - numpy
+    - pip :
+      - gurobipy
+      - openpyxl
+      - scikit-learn
+      - seaborn
+      - mycolorpy
+      - linopy
+
