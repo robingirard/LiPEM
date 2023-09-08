@@ -15,12 +15,12 @@ pd.set_option('display.width', 1000)
 from LEAP.f_graphicalTools import *
 from LEAP.f_consumption_tools import *
 from LEAP.f_tools import *
-from LEAP.f_planningModels_linopy import Build_EAP_Model,run_highs
+from LEAP.model_single_horizon_multi_energy import build_single_horizon_multi_energy_LEAP_model,run_highs
 #endregion
 
 #region Download data
-graphical_results_folder="Models/EU_7_nodes/graphical_results/"
-input_data_folder="Models/EU_7_nodes/data/"
+graphical_results_folder="case_studies/eu_7_nodes/graphical_results/"
+input_data_folder="case_studies/eu_7_nodes/data/"
 from urllib.request import urlretrieve
 
 xls_7_nodes_file = input_data_folder+"EU_7_2050.xlsx"
@@ -52,7 +52,7 @@ parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"cc
 
 #region I - Simple single area (with ramp) : building and solving problem, results visualisation
 #building model and solving the problem
-model = Build_EAP_Model(parameters=parameters)
+model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
 model.solve(solver_name='cbc')
 ## synthèse Energie/Puissance/Coûts
 print(extractCosts_l(model))
@@ -89,7 +89,7 @@ parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"cc
 
 #region II -addition of Storage to single area with ramp : building and solving problem, results visualisation
 #building model and solving the problem
-model = Build_EAP_Model(parameters=parameters)
+model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
 model.solve(solver_name='cbc')
 #res= run_highs(model) #res= linopy.solvers.run_highs(model)
 
@@ -129,7 +129,7 @@ parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"cc
 
 #region III -- multi-zone without storage -: building and solving problem, results visualisation
 #building model and solving the problem
-model = Build_EAP_Model(parameters=parameters)
+model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
 #model.solve(solver_name='highs',parallel = "on")
 model.solve(solver_name='cbc')
 #res= run_highs(model) #res= linopy.solvers.run_highs(model)
@@ -173,7 +173,7 @@ parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"cc
 
 #region IV -- Simple single area +4 million EV +  demande side management +30TWh H2 : building and solving problem, results visualisation
 #building model and solving the problem
-model = Build_EAP_Model(parameters=parameters)
+model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
 model.solve(solver_name='cbc')# highs not faster than cbc
 #res= run_highs(model) #res= linopy.solvers.run_highs(model)
 
@@ -197,7 +197,7 @@ plotly.offline.plot(fig, filename=graphical_results_folder+'file.html') ## offli
 #endregion
 
 #region V - 7 node EU model - loading parameters
-graphical_results_folder="Models/Basic_France_Germany_models/Planning_optimisation/GraphicalResults/"
+graphical_results_folder="case_studies/Basic_France_Germany_models/Planning_optimisation/GraphicalResults/"
 selected_conversion_technology=['old_nuke', 'ccgt','wind_power_on_shore',"demand_not_served"] #you'll add 'solar' after #'new_nuke', 'hydro_river', 'hydro_reservoir','wind_power_on_shore', 'wind_power_off_shore', 'solar', 'Curtailement'}
 #selected_conversion_technology=['old_nuke','wind_power_on_shore', 'ccgt',"demand_not_served",'hydro_river', 'hydro_reservoir',"solar"] ## try adding 'hydro_river', 'hydro_reservoir'
 selected_storage_technology = ['storage_hydro']
@@ -218,7 +218,7 @@ year=2018
 
 #region V -- 7node EU model : building and solving problem, results visualisation
 #building model and solving the problem
-model = Build_EAP_Model(parameters=parameters)
+model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
 model.solve(solver_name='highs',parallel = "on")
 model.solve(solver_name='cplex')
 #res= run_highs(model) #res= linopy.solvers.run_highs(model)
