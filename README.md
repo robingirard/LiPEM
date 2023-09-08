@@ -1,2 +1,2 @@
 # Linopy Energy Alternative Planning (LEAP)
-Multi-energy system planning tool based on [linopy](https://github.com/PyPSA/linopy)
+Multi-energy system planning tools based on [linopy](https://github.com/PyPSA/linopy)
