@@ -13,7 +13,7 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 from LEAP.f_graphicalTools import *
-from LEAP.f_consumption_tools import *
+from LEAP.f_demand_tools import *
 from LEAP.f_tools import *
 from LEAP.model_single_horizon_multi_energy import build_single_horizon_multi_energy_LEAP_model,run_highs
 #endregion
