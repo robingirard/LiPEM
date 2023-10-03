@@ -124,7 +124,8 @@ def read_EAP_input_parameters(input_data_folder,file_id ,is_storage=True,is_dema
     else:
         temperature = pd.read_excel(xls_file, "temperature", parse_dates=['date']). \
             set_index(["date", "area_to"]).loc[str(year)].to_xarray(). \
-            expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1).drop_duplicates(dim="date")
+            expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1).\
+            drop_duplicates(dim="date").select({"area_to": selected_area_to})
 
     thermal_sensitivity = pd.read_excel(xls_file, "thermal_sensitivity").set_index(["area_to"]).to_xarray(). \
         expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1)

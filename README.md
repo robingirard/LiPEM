@@ -17,7 +17,6 @@ The installation relies on the use of a conda environment. Instruction is below
 * [5. Getting help](#GettingH)
 * [6. Getting involved](#GettingI)
 
-
 ## 1 - Installations  <a class="anchor" id="installations"></a>
 
 You need to have conda installed and to clone le project 

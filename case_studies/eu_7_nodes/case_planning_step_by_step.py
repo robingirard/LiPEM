@@ -15,7 +15,7 @@ pd.set_option('display.width', 1000)
 from LEAP.f_graphicalTools import *
 from LEAP.f_demand_tools import *
 from LEAP.f_tools import *
-from LEAP.model_single_horizon_multi_energy import build_single_horizon_multi_energy_LEAP_model,run_highs
+from LEAP.model_single_horizon_multi_energy import build_single_horizon_multi_energy_LEAP_model
 #endregion
 
 #region Download data
@@ -45,6 +45,7 @@ parameters["operation_min_1h_ramp_rate"].loc[{"conversion_technology" :"old_nuke
 parameters["operation_max_1h_ramp_rate"].loc[{"conversion_technology" :"ccgt"}] = 0.05
 parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"old_nuke"}]=80000
 parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"ccgt"}]=80000
+
 #parameters["exogenous_energy_demand"]
 #parameters=parameters.expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1)
 
@@ -53,7 +54,7 @@ parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"cc
 #region I - Simple single area (with ramp) : building and solving problem, results visualisation
 #building model and solving the problem
 model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
-model.solve(solver_name='cbc')
+model.solve(solver_name='gurobi')
 ## synthèse Energie/Puissance/Coûts
 print(extractCosts_l(model))
 print(extractEnergyCapacity_l(model))
@@ -62,6 +63,9 @@ model.solution["planning_conversion_power_capacity"]
 abs(model.solution['operation_conversion_power'].sum(['conversion_technology'])-parameters['exogenous_energy_demand']).max()
 
 ## visualisation de la série
+
+model.solution['operation_conversion_power'].get_index("date")
+
 production_df=model.solution['operation_conversion_power'].to_dataframe().\
     reset_index().pivot(index="date",columns='conversion_technology', values='operation_conversion_power')
 fig=MyStackedPlotly(y_df=production_df,Conso = parameters["exogenous_energy_demand"].to_dataframe())
@@ -174,7 +178,7 @@ parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"cc
 #region IV -- Simple single area +4 million EV +  demande side management +30TWh H2 : building and solving problem, results visualisation
 #building model and solving the problem
 model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
-model.solve(solver_name='cbc')# highs not faster than cbc
+model.solve(solver_name='gurobi')# highs not faster than cbc
 #res= run_highs(model) #res= linopy.solvers.run_highs(model)
 
 ## synthèse Energie/Puissance/Coûts
@@ -219,22 +223,26 @@ year=2018
 #region V -- 7node EU model : building and solving problem, results visualisation
 #building model and solving the problem
 model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
-model.solve(solver_name='highs',parallel = "on")
-model.solve(solver_name='cplex')
+#model.solve(solver_name='highs',parallel = "on")
+#model.solve(solver_name='cplex')
+model.solve(solver_name='gurobi') ### gurobi = 7 minutes highs = 24 hours
 #res= run_highs(model) #res= linopy.solvers.run_highs(model)
 
 ## synthèse Energie/Puissance/Coûts
 print(extractCosts_l(model))
 print(extractEnergyCapacity_l(model))
 
-### Check sum Prod = Consumption
-Variables = {name: model.solution[name].to_dataframe().reset_index() for name in list(model.solution.keys())}
-production_df = EnergyAndExchange2Prod(Variables)
-abs(production_df.sum(axis=1)-parameters['energy_demand'].to_dataframe()["energy_demand"]).max()
+### Check sum Prod == sum Consumption
+Prod_minus_conso = model.solution['operation_conversion_power'].sum(['conversion_technology']) - model.solution['total_demand'] + model.solution['operation_storage_power_out'].sum(['storage_technology']) - model.solution['operation_storage_power_in'].sum(['storage_technology']) ## Storage
+abs(Prod_minus_conso).max()
+
+Storage_production = (model.solution['operation_storage_power_out'] - model.solution['operation_storage_power_in']).rename({"storage_technology":"conversion_technology"})
+Storage_production.name = "operation_conversion_power"
+production_xr = xr.combine_by_coords([model.solution['operation_conversion_power'],Storage_production])
 
 ## visualisation de la série
-production_df = EnergyAndExchange2Prod(Variables)
-fig=MyAreaStackedPlot(df_=production_df,Conso=model.solution['total_demand'].to_dataframe())
+production_df=production_xr.to_dataframe().reset_index().pivot(index="date",columns='conversion_technology', values='operation_conversion_power')
+fig=MyStackedPlotly(y_df=production_df,Conso = model.solution['total_demand'].to_dataframe())
 fig=fig.update_layout(title_text="Production électrique (en KWh)", xaxis_title="heures de l'année")
 plotly.offline.plot(fig, filename=graphical_results_folder+'file.html') ## offline
 #endregion
