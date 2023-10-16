@@ -135,7 +135,7 @@ parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"cc
 #building model and solving the problem
 model = build_single_horizon_multi_energy_LEAP_model(parameters=parameters)
 #model.solve(solver_name='highs',parallel = "on")
-model.solve(solver_name='cbc')
+model.solve(solver_name='gurobi')
 #res= run_highs(model) #res= linopy.solvers.run_highs(model)
 
 ## synthèse Energie/Puissance/Coûts

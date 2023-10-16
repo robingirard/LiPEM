@@ -307,8 +307,8 @@ def EnergyAndExchange2Prod(model, EnergyName='energy', exchangeName='Exchange'):
     #Variables["exchange_op_power"].columns = ['area_from', 'area_from_1', 'exchange_op_power']
     area_to = Variables['operation_conversion_power'].area_to.unique()
     production_df = Variables['operation_conversion_power'].pivot(index=["area_to", "date"], columns='conversion_technology', values='operation_conversion_power')
-    Import_Export = Variables['exchange_op_power'].groupby(["area_to", "date"]).sum()- Variables['exchange_op_power'].\
-        groupby(["area_from", "date"]).sum()
+    Import_Export = Variables['exchange_op_power'].groupby(["area_to", "date"])[['exchange_op_power']].sum()- Variables['exchange_op_power'].\
+        groupby(["area_from", "date"])[['exchange_op_power']].sum()
     #if ((Variables['exchange_op_power'].groupby(["area_to", "date"]).sum()*Variables['exchange_op_power'].\
     #        rename(columns={"area_from":"area_from_1","area_from_1":"area_from"}).groupby(["area_from", "date"]).sum()).sum() >0).bool():
     #    print("Problem with import - export")

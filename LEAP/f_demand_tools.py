@@ -279,3 +279,9 @@ def Profile2Consumption(Profile_df,temperature_df, temperatureThreshold=14,
     Thermosensibilite = (PivotedProfile_df['NDifference'].loc[0:23] / cte).tolist()
     ConsoSepareeNew_df=Recompose(ConsoSepareeNew_df,Thermosensibilite)
     return(ConsoSepareeNew_df)
+
+gamma = 0.3; alpha = 0.75; eta = 0.3; delta = 0.05
+A = (1-gamma)*alpha*((1-eta)/3+eta)*(1-delta)
+gamma = 0.5; alpha = 0.75; eta = 0.1; delta = 0.10
+B = (1-gamma)*alpha*((1-eta)/3+eta)*(1-delta)
+A/B
