@@ -90,8 +90,7 @@ def build_single_horizon_multi_energy_LEAP_model(parameters):
         lhs = planning_conversion_cost == parameters["planning_conversion_unit_cost"] * planning_conversion_power_capacity )
 
     Ctr_Pl_planning_max_capacity = m.add_constraints(name="Ctr_Pl_planning_max_capacity",
-        lhs = planning_conversion_power_capacity <= parameters["planning_conversion_max_capacity"],
-        mask=parameters["planning_conversion_max_capacity"] > 0)
+        lhs = planning_conversion_power_capacity <= parameters["planning_conversion_max_capacity"])
 
     Ctr_Pl_planning_min_capacity = m.add_constraints(name="Ctr_Pl_planning_min_capacity",
         lhs = planning_conversion_power_capacity >= parameters["planning_conversion_min_capacity"],

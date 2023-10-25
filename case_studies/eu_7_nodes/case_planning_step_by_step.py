@@ -186,7 +186,7 @@ print(extractCosts_l(model))
 print(extractEnergyCapacity_l(model))
 
 ### Check sum Prod == sum Consumption
-Prod_minus_conso = model.solution['operation_conversion_power'].sum(['conversion_technology']) - model.solution['total_demand'] + model.solution['operation_storage_power_out'].sum(['storage_technology']) - model.solution['operation_storage_power_in'].sum(['storage_technology']) ## Storage
+Prod_minus_conso = model.solution['operation_conversion_power'].sum(['conversion_technology']) - parameters['exogenous_energy_demand'] + model.solution['operation_storage_power_out'].sum(['storage_technology']) - model.solution['operation_storage_power_in'].sum(['storage_technology']) ## Storage
 abs(Prod_minus_conso).max()
 
 Storage_production = (model.solution['operation_storage_power_out'] - model.solution['operation_storage_power_in']).rename({"storage_technology":"conversion_technology"})
@@ -195,16 +195,16 @@ production_xr = xr.combine_by_coords([model.solution['operation_conversion_power
 
 ## visualisation de la série
 production_df=production_xr.to_dataframe().reset_index().pivot(index="date",columns='conversion_technology', values='operation_conversion_power')
-fig=MyStackedPlotly(y_df=production_df,Conso = model.solution['total_demand'].to_dataframe())
+fig=MyStackedPlotly(y_df=production_df,Conso = parameters['exogenous_energy_demand'].to_dataframe())
 fig=fig.update_layout(title_text="Production électrique (en KWh)", xaxis_title="heures de l'année")
 plotly.offline.plot(fig, filename=graphical_results_folder+'file.html') ## offline
 #endregion
 
 #region V - 7 node EU model - loading parameters
 graphical_results_folder="case_studies/Basic_France_Germany_models/Planning_optimisation/GraphicalResults/"
-selected_conversion_technology=['old_nuke', 'ccgt','wind_power_on_shore',"demand_not_served"] #you'll add 'solar' after #'new_nuke', 'hydro_river', 'hydro_reservoir','wind_power_on_shore', 'wind_power_off_shore', 'solar', 'Curtailement'}
-#selected_conversion_technology=['old_nuke','wind_power_on_shore', 'ccgt',"demand_not_served",'hydro_river', 'hydro_reservoir',"solar"] ## try adding 'hydro_river', 'hydro_reservoir'
-selected_storage_technology = ['storage_hydro']
+#selected_conversion_technology=['old_nuke', 'ccgt','wind_power_on_shore',"demand_not_served"] #you'll add 'solar' after #'new_nuke', 'hydro_river', 'hydro_reservoir','wind_power_on_shore', 'wind_power_off_shore', 'solar', 'Curtailement'}
+selected_conversion_technology=['old_nuke','wind_power_on_shore', 'ccgt',"demand_not_served",'hydro_river', 'hydro_reservoir',"solar"] ## try adding 'hydro_river', 'hydro_reservoir'
+selected_storage_technology = ['storage_hydro',"battery"]
 parameters = read_EAP_input_parameters(selected_area_to=None,
                                        selected_conversion_technology=selected_conversion_technology,
                                     selected_storage_technology=selected_storage_technology,
@@ -214,9 +214,9 @@ parameters = read_EAP_input_parameters(selected_area_to=None,
 
 parameters["operation_min_1h_ramp_rate"].loc[{"conversion_technology" :"old_nuke"}] = 0.01
 parameters["operation_max_1h_ramp_rate"].loc[{"conversion_technology" :"old_nuke"}] = 0.02
-parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"old_nuke"}]=80000
+#parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"old_nuke"}]=80000
 parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"ccgt"}]=50000
-
+#parameters["planning_conversion_max_capacity"].loc[{"conversion_technology" :"old_nuke"}]
 year=2018
 #endregion
 
@@ -230,10 +230,13 @@ model.solve(solver_name='gurobi') ### gurobi = 7 minutes highs = 24 hours
 
 ## synthèse Energie/Puissance/Coûts
 print(extractCosts_l(model))
-print(extractEnergyCapacity_l(model))
+print(extractEnergyCapacity_l(model)['Capacity_GW'])
+print(extractEnergyCapacity_l(model)['Energy_TWh'])
 
 ### Check sum Prod == sum Consumption
-Prod_minus_conso = model.solution['operation_conversion_power'].sum(['conversion_technology']) - model.solution['total_demand'] + model.solution['operation_storage_power_out'].sum(['storage_technology']) - model.solution['operation_storage_power_in'].sum(['storage_technology']) ## Storage
+
+production_df = EnergyAndExchange2Prod(model)
+Prod_minus_conso = production_df.sum(axis=1).to_xarray() - parameters['exogenous_energy_demand'] + model.solution['operation_storage_power_out'].sum(['storage_technology']) - model.solution['operation_storage_power_in'].sum(['storage_technology']) ## Storage
 abs(Prod_minus_conso).max()
 
 Storage_production = (model.solution['operation_storage_power_out'] - model.solution['operation_storage_power_in']).rename({"storage_technology":"conversion_technology"})
@@ -242,7 +245,7 @@ production_xr = xr.combine_by_coords([model.solution['operation_conversion_power
 
 ## visualisation de la série
 production_df=production_xr.to_dataframe().reset_index().pivot(index="date",columns='conversion_technology', values='operation_conversion_power')
-fig=MyStackedPlotly(y_df=production_df,Conso = model.solution['total_demand'].to_dataframe())
+fig=MyStackedPlotly(y_df=production_df,Conso = parameters['exogenous_energy_demand'].to_dataframe())
 fig=fig.update_layout(title_text="Production électrique (en KWh)", xaxis_title="heures de l'année")
 plotly.offline.plot(fig, filename=graphical_results_folder+'file.html') ## offline
 #endregion
