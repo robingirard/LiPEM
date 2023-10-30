@@ -105,7 +105,7 @@ def compute_flexible_demand_to_optimise(flexible_demand_table, demand_profile,ex
                                 expand_dims(dim={"flexible_demand": [flexible_demand_type]}, axis=1))
     profiles = xr.merge(profile_to_merge)
 
-    flexible_demand_to_optimise = profiles * flexible_demand_table.flexible_demand_yearly_energy_twh
+    flexible_demand_to_optimise = profiles * flexible_demand_table.flexible_demand_yearly_energy_twh*10**6 # * 10**3
     return flexible_demand_to_optimise
 
 def normalize(demand):

@@ -208,7 +208,7 @@ def build_single_horizon_multi_energy_LEAP_model(parameters):
                                                  lower=0, coords=[area_to,energy_vector_out,flexible_demand])
         planning_flexible_demand_cost = m.add_variables(name="planning_flexible_demand_cost",
                                                         lower=0,   coords=[area_to,energy_vector_out,flexible_demand])
-        operation_flexible_demand_variation_ratio = m.add_variables(name="operation_flexible_demand_variation_ratio",lower=0,coords=[date,area_to,energy_vector_out,flexible_demand])
+        operation_flexible_demand_variation_ratio = m.add_variables(name="operation_flexible_demand_variation_ratio",coords=[date,area_to,energy_vector_out,flexible_demand])
 
         # update of the cost function and of the prod = conso constraint
         m.objective += planning_flexible_demand_cost.sum()
