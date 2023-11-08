@@ -818,16 +818,33 @@ def MyStackedPlotly(y_df, Conso=-1,isModifyOrder=True,Names=-1,color_dict=None):
             color_dict = gen_grouped_color_map(col_class_dict)
         else: "column multi index only implemented for 2 dimensions"
 
-    if isModifyOrder: y_df=ModifyOrder_df(y_df) ### set Nuke first column
+    if isModifyOrder: y_df=ModifyOrder_df(y_df) ### set negative, then set Nuke first column
     if (Names.__class__ == int): Names=y_df.columns.unique().tolist()
     x_df=y_df.index
     fig = go.Figure()
-    i = 0
     if color_dict == None:
         colnames = y_df.columns
     else:
         colnames = list(color_dict.keys())
+    df_neg = y_df.loc[:,[y_df[col].max()<=0 for col in y_df]]
+    df_pos = y_df.loc[:,[y_df[col].min()>=0 for col in y_df]]
+    fig = add_lines(fig, x_df, df_neg, color_dict, colnames, Names)
+    fig = add_lines(fig, x_df, df_pos, color_dict, colnames, Names)
 
+    if (Conso.__class__ != int):
+        fig.add_trace(go.Scatter(x=Conso.index,
+                                 y=Conso["energy_demand"], name="Conso",
+                                 line=dict(color='red', width=0.4)))  # fill down to xaxis
+        if "NewConsumption" in Conso.keys():
+            fig.add_trace(go.Scatter(x=Conso.index,
+                                     y=Conso["NewConsumption"], name="Conso+stockage",
+                                     line=dict(color='black', width=0.4)))  # fill down to xaxis
+
+    fig.update_xaxes(rangeslider_visible=True)
+    return(fig)
+
+def add_lines(fig,x_df,y_df,color_dict,colnames,Names):
+    i = 0
     for col in colnames:
         if i == 0:
             if color_dict==None:
@@ -846,18 +863,7 @@ def MyStackedPlotly(y_df, Conso=-1,isModifyOrder=True,Names=-1,color_dict=None):
                 fig.add_trace(go.Scatter(x=x_df, y=y_df.loc[:, y_df.columns.isin(colNames)].sum(axis=1), fill='tonexty',
                                          fillcolor=color_dict[col],mode='none', name=col))  # fill to trace0 y
         i = i + 1
-
-    if (Conso.__class__ != int):
-        fig.add_trace(go.Scatter(x=Conso.index,
-                                 y=Conso["energy_demand"], name="Conso",
-                                 line=dict(color='red', width=0.4)))  # fill down to xaxis
-        if "NewConsumption" in Conso.keys():
-            fig.add_trace(go.Scatter(x=Conso.index,
-                                     y=Conso["NewConsumption"], name="Conso+stockage",
-                                     line=dict(color='black', width=0.4)))  # fill down to xaxis
-
-    fig.update_xaxes(rangeslider_visible=True)
-    return(fig)
+    return fig
 
 def AppendMyStackedPlotly(fig,y_df,Conso,isModifyOrder=True):
     '''
@@ -970,6 +976,10 @@ def ModifyOrder_df(df):
     if "NukeCarrene" in df.columns:
         Nuke=df.pop("NukeCarrene")
         df.insert(0, "NukeCarrene", Nuke)
+    for col in df:
+        if df[col].max()<=0:
+            tmp=df.pop(col)
+            df.insert(0, col, tmp)
     return(df);
 
 def plotDecomposedConso(x_df,y_df, Tofile=False, TimeName='date'):
