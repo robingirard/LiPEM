@@ -307,4 +307,3 @@ A_T = 4; A_ST = 3; D_A = 2; D_A_T = 4; D_A_ST = 5
 A = 7 ; ST =2 ; D = 8760 ; T = 10
 
 A*T*A_T + A*ST*A_ST+D*A*D_A+D*A*T*D_A_T+D*A*ST*D_A_ST
-
