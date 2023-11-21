@@ -23,14 +23,27 @@ graphical_results_folder="case_studies/eu_7_nodes/graphical_results/"
 input_data_folder="case_studies/eu_7_nodes/data/"
 from urllib.request import urlretrieve
 
-xls_7_nodes_file = input_data_folder+"EU_7_2050.xlsx"
-if not os.path.isfile(xls_7_nodes_file):
-    response = requests.get("https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg")
-    with open(xls_7_nodes_file, mode="wb") as file:
-        file.write(response.content)
-    print(f"Downloaded EU_7_2050 and saved to {xls_7_nodes_file}\n Do not sync excel file with git.")
+input_files_dic = {"EU_7_2050.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg",
+                   "EU_7_2050_exogeneous_energy_demand.nc" : "https://cloud.minesparis.psl.eu/index.php/s/31tqYN1sndcNirU",
+                   "EU_7_2050_availability.nc" : "https://cloud.minesparis.psl.eu/index.php/s/sLpfLJdYQ5ks4YM",
+                   "EU_7_2050_temperature.nc" : "https://cloud.minesparis.psl.eu/index.php/s/aALUWGnubUUYQ1I",
+                   "EU_7_2050_reference.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/kSU57U0nq9cSMKy",
+                   "EU_7_2050_Nuke-.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/tu92ikbzjD7DWt3",
+                   "EU_7_2050_Flex+.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/SAV46N1dhw2Xxew",
+                   "EU_7_2050_Nuke+.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/ni3wkVlnmIRuiHD"}
+if not os.path.exists(input_data_folder):
+    os.makedirs(input_data_folder)
+for file_name in input_files_dic:
+    file_to_download = input_data_folder+file_name
+    if not os.path.isfile(file_to_download):
+        response = requests.get(input_files_dic[file_name])
+        with open(file_to_download, mode="wb") as file:
+            file.write(response.content)
+        print(f"Downloaded "+file_name+" and saved to "+file_to_download+"\n Do not sync excel/nc files with git.")
 #endregion
-
+scenario = "reference"
+xls_7_nodes_file = input_data_folder+"EU_7_2050_"+scenario+".xlsx"
+xls_7_nodes_file = input_data_folder+"EU_7_2050.xlsx"
 #region I - Simple single area (with ramp) : loading parameters
 selected_area_to=["FR"]
 selected_conversion_technology=['old_nuke', 'ccgt',"demand_not_served"] #you'll add 'solar' after

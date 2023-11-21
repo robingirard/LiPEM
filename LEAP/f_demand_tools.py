@@ -7,7 +7,7 @@ import os
 import copy
 import datetime
 import matplotlib.pyplot as plt
-from sklearn import linear_model
+#from sklearn import linear_model
 from datetime import time
 from datetime import datetime
 from datetime import date
