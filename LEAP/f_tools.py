@@ -4,7 +4,7 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 from LEAP.f_demand_tools import *
-from sklearn.linear_model import LinearRegression
+#from sklearn.linear_model import LinearRegression
 #import flox ### not working for multidim groupby
 def read_EAP_input_parameters(input_data_folder,file_id ,is_storage=True,is_demand_management=True,
                     selected_area_to=None,selected_conversion_technology=None,
