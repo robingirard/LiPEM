@@ -25,11 +25,20 @@ You need to have conda installed and to clone le project
 * [Anaconda 3.8 distribution](https://www.anaconda.com/distribution/) or [Miniconda3 distribution](https://docs.conda.io/en/latest/miniconda.html)
 * To clone LEAP's Gitlab repository, [Git](https://git-scm.com/downloads) (On Windows, [Git for Windows](https://git-for-windows.github.io/) is preferred)
 
+Using python [Pycharm](https://www.jetbrains.com/pycharm/) IDE
+which can be downloaded from this [webpage](https://www.jetbrains.com/pycharm/download/?section=windows)
+facilitates the interaction with the tool.
 
-Once you have downloaded the LEAP folder, you need to open a terminal in order to create the conda environment thanks to the conda.yml file:
-
-    conda env create --file conda.yml
-    conda activate LEAP
+1. Clone repository
+2. Create a virtual environment for python at project root (`python>=3.10`)
+   - **Virtual environment** with Pycharm:
+      Python interpreter >
+      Add New Interpreter >
+      Add local interpreter >
+      Virtualenv Environment
+   - **Conda environment** is also a possibility
+3. Install dependencies: `$ pip install -r requirements.txt`
+4. (To contribute install pre-commit hooks): `$ pre-commit install`
 
 
 ## 2- Case_studies Folder <a class="anchor" id="CasDEtude"></a>
