@@ -19,3 +19,4 @@ nbformat
 pytest
 jupyter
 mycolorpy
+requests
