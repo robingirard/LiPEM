@@ -7,6 +7,8 @@ sys.path.extend(['.'])
 import linopy
 import pandas as pd
 import requests
+import wget
+
 pd.options.display.width = 0
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -33,14 +35,19 @@ input_files_dic = {"EU_7_2050.xlsx" : "https://cloud.minesparis.psl.eu/index.php
                    "EU_7_2050_Nuke+.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/ni3wkVlnmIRuiHD"}
 if not os.path.exists(input_data_folder):
     os.makedirs(input_data_folder)
+
+file_name = wget.download("https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg")
+
 for file_name in input_files_dic:
     file_to_download = input_data_folder+file_name
     if not os.path.isfile(file_to_download):
-        response = requests.get(input_files_dic[file_name])
+        response = requests.get(input_files_dic[file_name]+"/download")
         with open(file_to_download, mode="wb") as file:
             file.write(response.content)
         print(f"Downloaded "+file_name+" and saved to "+file_to_download+"\n Do not sync excel/nc files with git.")
 #endregion
+#TODO write something with beautiful soup that would scan a whole cloud folder https://copyprogramming.com/howto/scraping-and-downloading-excel-files-using-python-from-url#scraping-and-downloading-excel-files-using-python-from-url
+
 scenario = "reference"
 xls_7_nodes_file = input_data_folder+"EU_7_2050_"+scenario+".xlsx"
 xls_7_nodes_file = input_data_folder+"EU_7_2050.xlsx"
