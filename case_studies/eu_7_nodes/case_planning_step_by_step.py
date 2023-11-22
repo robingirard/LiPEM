@@ -1,13 +1,9 @@
-
-#region initialisation
 import os
 import sys
 sys.path.extend(['.'])
 #import highspy # if using highs solver
 import linopy
 import pandas as pd
-import requests
-import wget
 
 pd.options.display.width = 0
 pd.set_option('display.max_rows', 500)
@@ -18,39 +14,21 @@ from LEAP.f_graphicalTools import *
 from LEAP.f_demand_tools import *
 from LEAP.f_tools import *
 from LEAP.model_single_horizon_multi_energy import build_single_horizon_multi_energy_LEAP_model
-#endregion
+
+
 
 #region Download data
 graphical_results_folder="case_studies/eu_7_nodes/graphical_results/"
+if not os.path.exists(graphical_results_folder):
+    os.makedirs(graphical_results_folder)
 input_data_folder="case_studies/eu_7_nodes/data/"
-from urllib.request import urlretrieve
-
-input_files_dic = {"EU_7_2050.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg",
-                   "EU_7_2050_exogeneous_energy_demand.nc" : "https://cloud.minesparis.psl.eu/index.php/s/31tqYN1sndcNirU",
-                   "EU_7_2050_availability.nc" : "https://cloud.minesparis.psl.eu/index.php/s/sLpfLJdYQ5ks4YM",
-                   "EU_7_2050_temperature.nc" : "https://cloud.minesparis.psl.eu/index.php/s/aALUWGnubUUYQ1I",
-                   "EU_7_2050_reference.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/kSU57U0nq9cSMKy",
-                   "EU_7_2050_Nuke-.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/tu92ikbzjD7DWt3",
-                   "EU_7_2050_Flex+.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/SAV46N1dhw2Xxew",
-                   "EU_7_2050_Nuke+.xlsx" : "https://cloud.minesparis.psl.eu/index.php/s/ni3wkVlnmIRuiHD"}
-if not os.path.exists(input_data_folder):
-    os.makedirs(input_data_folder)
-
-file_name = wget.download("https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg")
-
-for file_name in input_files_dic:
-    file_to_download = input_data_folder+file_name
-    if not os.path.isfile(file_to_download):
-        response = requests.get(input_files_dic[file_name]+"/download")
-        with open(file_to_download, mode="wb") as file:
-            file.write(response.content)
-        print(f"Downloaded "+file_name+" and saved to "+file_to_download+"\n Do not sync excel/nc files with git.")
+download_input_data(input_data_folder)
 #endregion
 #TODO write something with beautiful soup that would scan a whole cloud folder https://copyprogramming.com/howto/scraping-and-downloading-excel-files-using-python-from-url#scraping-and-downloading-excel-files-using-python-from-url
 
 scenario = "reference"
-xls_7_nodes_file = input_data_folder+"EU_7_2050_"+scenario+".xlsx"
-xls_7_nodes_file = input_data_folder+"EU_7_2050.xlsx"
+xls_7_nodes_file_ID = "EU_7_2050_"+scenario
+#xls_7_nodes_file_ID = "EU_7_2050"
 #region I - Simple single area (with ramp) : loading parameters
 selected_area_to=["FR"]
 selected_conversion_technology=['old_nuke', 'ccgt',"demand_not_served"] #you'll add 'solar' after
@@ -59,7 +37,7 @@ selected_conversion_technology=['old_nuke', 'ccgt',"demand_not_served"] #you'll 
 parameters = read_EAP_input_parameters(selected_area_to=selected_area_to,
                                        selected_conversion_technology=selected_conversion_technology,
                                  input_data_folder=input_data_folder,
-                                 file_id = "EU_7_2050",
+                                 file_id = xls_7_nodes_file_ID,
                              is_storage=False,is_demand_management=False)
 parameters["operation_min_1h_ramp_rate"].loc[{"conversion_technology" :"old_nuke"}] = 0.02
 parameters["operation_max_1h_ramp_rate"].loc[{"conversion_technology" :"ccgt"}] = 0.05

@@ -3,6 +3,8 @@ import linopy
 import xarray as xr
 import pandas as pd
 import numpy as np
+import requests
+
 from LEAP.f_demand_tools import *
 #from sklearn.linear_model import LinearRegression
 #import flox ### not working for multidim groupby
@@ -50,11 +52,11 @@ def read_EAP_input_parameters(input_data_folder,file_id ,is_storage=True,is_dema
         selected_area_to= list(conversion_technology_parameters["area_to"].to_numpy())
     if selected_conversion_technology == None:
         selected_conversion_technology= list(conversion_technology_parameters["conversion_technology"].to_numpy())
-    to_merge.append(conversion_technology_parameters.loc[{"conversion_technology" : selected_conversion_technology,"area_to": selected_area_to}])
+    to_merge.append(conversion_technology_parameters.select({"conversion_technology" : selected_conversion_technology,"area_to": selected_area_to}))
 
     # energy_vector_in
     if verbose : print("Reading energy_vector_in")
-    selected_energy_vector_in_value = list(np.unique(conversion_technology_parameters.loc[{"conversion_technology" : selected_conversion_technology,"area_to": selected_area_to}]["energy_vector_in_value"].squeeze().to_numpy()))
+    selected_energy_vector_in_value = list(np.unique(conversion_technology_parameters.select({"conversion_technology" : selected_conversion_technology,"area_to": selected_area_to})["energy_vector_in_value"].squeeze().to_numpy()))
     to_merge.append(
         pd.read_excel(xls_file, "energy_vector_in").dropna().set_index(["area_to", "energy_vector_in"]).\
         to_xarray().loc[{"energy_vector_in" : selected_energy_vector_in_value,"area_to": selected_area_to}]
@@ -316,3 +318,25 @@ def EnergyAndExchange2Prod(model, EnergyName='energy', exchangeName='Exchange'):
     production_df = production_df.merge(Import_Export, how='inner', left_on=["area_to", "date"], right_on=["area_to", "date"])
     # exchange analysis
     return (production_df);
+
+
+def download_input_data(input_data_folder="case_studies/eu_7_nodes/data/"):
+    input_files_dic = {"EU_7_2050.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg",
+                       "EU_7_2050_exogeneous_energy_demand.nc": "https://cloud.minesparis.psl.eu/index.php/s/31tqYN1sndcNirU",
+                       "EU_7_2050_availability.nc": "https://cloud.minesparis.psl.eu/index.php/s/sLpfLJdYQ5ks4YM",
+                       "EU_7_2050_temperature.nc": "https://cloud.minesparis.psl.eu/index.php/s/aALUWGnubUUYQ1I",
+                       "EU_7_2050_reference.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/kSU57U0nq9cSMKy",
+                       "EU_7_2050_Nuke-.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/tu92ikbzjD7DWt3",
+                       "EU_7_2050_Flex+.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/SAV46N1dhw2Xxew",
+                       "EU_7_2050_Nuke+.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/ni3wkVlnmIRuiHD"}
+    if not os.path.exists(input_data_folder):
+        os.makedirs(input_data_folder)
+
+    for file_name in input_files_dic:
+        file_to_download = input_data_folder + file_name
+        if not os.path.isfile(file_to_download):
+            response = requests.get(input_files_dic[file_name] + "/download")
+            with open(file_to_download, mode="wb") as file:
+                file.write(response.content)
+            print(
+                f"Downloaded " + file_name + " and saved to " + file_to_download + "\n Do not sync excel/nc files with git.")
