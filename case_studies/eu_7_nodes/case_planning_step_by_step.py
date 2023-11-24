@@ -305,3 +305,45 @@ A_T = 4; A_ST = 3; D_A = 2; D_A_T = 4; D_A_ST = 5
 A = 7 ; ST =2 ; D = 8760 ; T = 10
 
 A*T*A_T + A*ST*A_ST+D*A*D_A+D*A*T*D_A_T+D*A*ST*D_A_ST
+
+
+import plotly.graph_objects as go
+import numpy as np
+
+# Données fournies
+xvals = [0,1E-04,0.01,	0.02,	0.03,	0.04,	0.05,	0.06,	0.07,	0.08,	0.09,	0.1]
+x_vals=[x*100 for x in xvals]
+y_vals = [x+1 for x in range(80)]
+import pandas as pd
+import numpy as np
+
+# Définir la fonction f(x, y)
+def Lr(r, L):
+    return ((1+r/100)**L -1)/(r/100*(r/100+1)**L)
+
+# Générer des valeurs pour x, y
+x_values = np.linspace(1, 10, 10)  # Exemple de valeurs pour x
+y_values = np.linspace(1, 80, 110)  # Exemple de valeurs pour y
+
+# Créer une grille 2D pour x et y
+x, y = np.meshgrid(x_values, y_values)
+
+# Appliquer la fonction f à la grille
+z = Lr(x, y).ravel()
+
+# Créer un DataFrame avec un double index construit avec x et y
+df = pd.DataFrame({'Corrected_LL': z}, index=pd.MultiIndex.from_product([x_values, y_values], names=['taux', 'Life_length']))
+
+fig = go.Figure()
+
+# Ajouter une surface 3D avec x, y et z
+contour = go.Contour(x=x_values, y=y_values, z=df['Corrected_LL'].values.reshape(x.shape), colorscale='Viridis', line=dict(smoothing=0.85), contours=dict(showlabels=True))
+fig.add_trace(contour)
+
+# Ajouter l'axe x, y et z
+fig.update_layout(
+    xaxis_title='Taux d\'actualisation en %',
+    yaxis_title='Durée de vie en années',
+    title='Lignes de niveau discrètes de la durée de vie corrigée avec Plotly'
+)
+plotly.offline.plot(fig, filename=graphical_results_folder+'file.html') ## offline
