@@ -126,7 +126,7 @@ plotly.offline.plot(fig, filename=graphical_results_folder+'file.html') ## offli
 #region III -- multi-zone without storage - loading parameters
 selected_area_to=["FR","DE"]
 selected_conversion_technology=['old_nuke', 'ccgt','wind_power_on_shore',"demand_not_served"] #you'll add 'solar' after #'new_nuke', 'hydro_river', 'hydro_reservoir','wind_power_on_shore', 'wind_power_off_shore', 'solar', 'Curtailement'}
-#selected_conversion_technology=['old_nuke','wind_power_on_shore', 'ccgt',"demand_not_served",'hydro_river', 'hydro_reservoir',"solar"] ## try adding 'hydro_river', 'hydro_reservoir'
+# selected_conversion_technology=['old_nuke','wind_power_on_shore', 'ccgt',"demand_not_served",'hydro_river', 'hydro_reservoir',"solar"] ## try adding 'hydro_river', 'hydro_reservoir'
 
 parameters = read_EAP_input_parameters(selected_area_to=selected_area_to,
                                        selected_conversion_technology=selected_conversion_technology,
@@ -248,7 +248,7 @@ model.solve(solver_name='gurobi') ### gurobi = 7 minutes highs = 24 hours
 print(extractCosts_l(model))
 print(extractEnergyCapacity_l(model)['Capacity_GW'])
 print(extractEnergyCapacity_l(model)['Energy_TWh'])
-Battery_energy_in_TWh = extractEnergyCapacity_l(model)['Energy_TWh'].loc[(slice(None),slice(None),"battery","storage_in")]['Energy_TWh']
+Battery_energy_in_TWh = extractEnergyCapacity_l(model)['Energy_TWh'].loc[(slice(None),slice(None),"battery","storage_in")]['Energy_TWh'] # KeyError: 'battery'
 Battery_capacity_GW = extractEnergyCapacity_l(model)['Capacity_GW'].loc[(slice(None),slice(None),"battery","storage_capacity")]['Capacity_GW']
 Battery_energy_in_TWh*1000/(Battery_capacity_GW*4)
 ### Check sum Prod == sum Consumption
