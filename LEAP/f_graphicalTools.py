@@ -1225,13 +1225,39 @@ def marimekko_2(df,ColorY_var_name,horizontalX_var_name,TextureX_var_name,color_
 ########################  Part added for the LEAP course  ########################
 ##################################################################################
 
+# def GetColorDict_():
+#     # Reload color_dict from the JSON file
+#     with open('LEAP/metadata/' + 'color_dict.json', 'r') as json_file:
+#         reloaded_color_dict = json.load(json_file)
+#
+#     # Now, reloaded_color_dict contains the same values as the original color_dict
+#     return reloaded_color_dict
 def GetColorDict_():
-    # Reload color_dict from the JSON file
-    with open('LEAP/metadata/' + 'color_dict.json', 'r') as json_file:
-        reloaded_color_dict = json.load(json_file)
-
-    # Now, reloaded_color_dict contains the same values as the original color_dict
-    return reloaded_color_dict
+    color_dict = {'ccgt': 'darkred',
+     'demand_not_served': 'black',
+     'hydro_reservoir': 'lightblue',
+     'hydro_river': 'navy',
+     'new_nuke': 'purple',
+     'ocgt': 'red',
+     'old_nuke': 'yellow',
+     'solar': 'orange',
+     'wind_power_off_shore': 'cyan',
+     'wind_power_on_shore': 'lime',
+     'exchange_of_power': 'gray',
+     'FR': 'navy',
+     'DE': 'yellow',
+     'GB': 'red',
+     'ES': 'orange',
+     'IT': 'lightblue',
+     'BE': 'gray',
+     'CH': 'red',
+     'exchanges_out': 'gray',
+     'battery_in': 'lightsalmon',
+     'storage_hydro_in': 'mediumturquoise',
+     'exchanges_in': 'gray',
+     'battery_out': 'lightsalmon',
+     'storage_hydro_out': 'mediumturquoise'}
+    return color_dict
 
 def AreaHourlyProductionPlot(data, area):
     color_dict = GetColorDict_()
