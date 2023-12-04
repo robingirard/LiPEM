@@ -19,6 +19,10 @@ import json
 import pkgutil
 from io import StringIO
 
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+
+
 # Global variables
 
 area_to_ORDER = ['FR','DE','GB','ES','IT','BE','CH']
@@ -828,8 +832,10 @@ def MyStackedPlotly(y_df, Conso=-1,isModifyOrder=True,Names=-1,color_dict=None):
         colnames = list(color_dict.keys())
     df_neg = y_df.loc[:,[y_df[col].max()<=0 for col in y_df]]
     df_pos = y_df.loc[:,[y_df[col].min()>=0 for col in y_df]]
-    fig = add_lines(fig, x_df, df_neg, color_dict, colnames, Names)
-    fig = add_lines(fig, x_df, df_pos, color_dict, colnames, Names)
+    if df_neg.columns.shape[0]>0 :
+        fig = add_lines(fig, x_df, df_neg, color_dict, colnames, Names)
+    if df_pos.columns.shape[0] > 0:
+        fig = add_lines(fig, x_df, df_pos, color_dict, colnames, Names)
 
     if (Conso.__class__ != int):
         fig.add_trace(go.Scatter(x=Conso.index,
@@ -1210,3 +1216,308 @@ def marimekko_2(df,ColorY_var_name,horizontalX_var_name,TextureX_var_name,color_
     #plotly.offline.plot(fig, filename='tmp.html')
 
     return fig
+
+
+
+
+
+##################################################################################
+########################  Part added for the LEAP course  ########################
+##################################################################################
+
+def GetColorDict_():
+    # Reload color_dict from the JSON file
+    with open('LEAP/metadata/' + 'color_dict.json', 'r') as json_file:
+        reloaded_color_dict = json.load(json_file)
+
+    # Now, reloaded_color_dict contains the same values as the original color_dict
+    return reloaded_color_dict
+
+def AreaHourlyProductionPlot(data, area):
+    color_dict = GetColorDict_()
+
+    Tech_Order = [
+        # 'exchange_op_power'  ,
+        'old_nuke', 'new_nuke',
+        'hydro_river', 'solar', 'wind_power_off_shore', 'wind_power_on_shore',
+        'ccgt', 'ocgt',
+        'hydro_reservoir',
+        ]
+
+
+    Variables = {name: data[name].to_dataframe().reset_index() for name in list(data.keys())}
+    # Variables["exchange_op_power"].columns = ['area_from', 'area_from_1', 'exchange_op_power']
+    area_to = Variables['operation_conversion_power'].area_to.unique()
+    production_df = Variables['operation_conversion_power'].pivot(index=["area_to", "date"],
+                                                                  columns='conversion_technology',
+                                                                  values='operation_conversion_power')
+    Import_Export = Variables['exchange_op_power'].groupby(["area_to", "date"])[['exchange_op_power']].sum() - \
+                    Variables['exchange_op_power']. \
+                        groupby(["area_from", "date"])[['exchange_op_power']].sum()
+    # if ((Variables['exchange_op_power'].groupby(["area_to", "date"]).sum()*Variables['exchange_op_power'].\
+    #        rename(columns={"area_from":"area_from_1","area_from_1":"area_from"}).groupby(["area_from", "date"]).sum()).sum() >0).bool():
+    #    print("Problem with import - export")
+
+    df = production_df.merge(Import_Export, how='inner', left_on=["area_to", "date"], right_on=["area_to", "date"])
+    df = df.loc[area]
+
+    df_neg = df.exchange_op_power.apply(lambda x: x if x <= 0 else 0)
+
+    _ = data.operation_storage_power_in.to_dataframe().reset_index()
+    _ = _[_['area_to'] == area].pivot_table(index=['date', 'area_to', 'energy_vector_out'],
+                                            columns='storage_technology',
+                                            values='operation_storage_power_in',
+                                            aggfunc='sum',
+                                            fill_value=0).reset_index().drop(['area_to', 'energy_vector_out'], axis=1)
+    _.columns.names = [None] * len(_.columns.names)
+    _ = _.groupby('date').sum()
+    _ = _ * -1
+
+    df_ = df_neg.reset_index().groupby('date').sum()
+    df_.columns = ['exchanges_out']
+    df_neg = pd.concat([df_, _], axis=1)
+
+    df_pos = df.exchange_op_power.apply(lambda x: x if x >= 0 else 0)
+
+    _ = data.operation_storage_power_out.to_dataframe().reset_index()
+    _ = _[_['area_to'] == area].pivot_table(index=['date', 'area_to', 'energy_vector_out'],
+                                            columns='storage_technology',
+                                            values='operation_storage_power_out',
+                                            aggfunc='sum',
+                                            fill_value=0).reset_index().drop(['area_to', 'energy_vector_out'],
+                                                                             axis=1).groupby('date').sum()
+    _.columns.names = [None] * len(_.columns.names)
+
+    df_ = df_pos.reset_index().groupby('date').sum()
+    df_.columns = ['exchanges_in']
+    df_
+    df_pos = pd.concat([df_, _], axis=1)
+
+    df_neg.columns = ['exchanges_out', 'battery_in', 'storage_hydro_in']
+    df_pos.columns = ['exchanges_in', 'battery_out', 'storage_hydro_out']
+
+    fig = go.Figure()
+    for column in df_neg.columns:
+        fig.add_trace(go.Scatter(
+            x=df_neg.index,
+            y=df_neg[column],
+            mode='lines',
+            stackgroup='neg',
+            name=column,
+            # line=dict(color=color_dict["exchange_of_power"])
+            line=dict(color=color_dict[column])
+        ))
+
+    for column in Tech_Order:
+        fig.add_trace(go.Scatter(
+            x=df.index,
+            y=df[column],
+            mode='lines',
+            stackgroup='pos',
+            name=column,
+            line=dict(color=color_dict[column])
+        ))
+
+    for column in df_pos.columns:
+        fig.add_trace(go.Scatter(
+            x=df_pos.index,
+            y=df_pos[column],
+            mode='lines',
+            stackgroup='pos',
+            name=column,
+            # line=dict(color=color_dict["exchange_of_power"])
+            line=dict(color=color_dict[column])
+        ))
+
+    column = 'demand_not_served'
+    fig.add_trace(go.Scatter(
+        x=df.index,
+        y=df[column],
+        mode='lines',
+        stackgroup='pos',
+        name=column,
+        line=dict(color=color_dict[column])
+    ))
+
+
+    fig.update_layout(
+        title=area + ' Hourly Production',
+        # xaxis_title='Date',
+        yaxis_title='Power',
+        showlegend=True,
+        autosize=True,
+        height=600
+    )
+    fig.update_xaxes(rangeslider_visible=True)
+    fig.update_layout(hovermode='x unified')
+    return fig
+
+
+def AreaHourlyProduction(data):
+    # Get unique areas from data.area_to
+    areas = data.indexes['area_to']
+
+
+
+
+
+    # Create a dropdown widget for selecting the area
+    area_dropdown = widgets.Dropdown(
+        options=areas,
+        value=areas[0],  # Default selected value
+        description='Select Area:',
+        style={'description_width': 'initial'}
+    )
+
+    # Create an output widget to display the plot
+    output = widgets.Output()
+
+    # Function to update the plot based on the selected area
+    def update_plot(area):
+        # Clear previous output within the specified display_id
+        with output:
+            clear_output(wait=True)
+
+            # Call the AreaHourlyProduction function and display the plot
+            fig = AreaHourlyProductionPlot(data, area)
+            fig.show()
+
+    # Use the interact function to connect the dropdown with the update_plot function
+    widgets.interact(update_plot, area=area_dropdown)
+
+    # Display the initial plot
+    update_plot(areas[0])
+
+    # Display the output widget
+    display(output)
+
+
+def ExchangesPlot(data, color_dict=GetColorDict_()):
+    df = data.exchange_op_power.to_dataframe().groupby(level=['area_to', 'area_from']).sum()
+
+    # color_list = [color_dict[area] for area in area_list  for _ in range(len(area_list))]
+    area_list = df.reset_index()['area_to'].unique()
+    color_list = [color_dict[area] for area in df.index.get_level_values('area_from').tolist() +
+                  df.index.get_level_values('area_to').tolist()]
+
+    # Create a Sankey diagram using Plotly Graph Objects
+    fig = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color='black', width=0.5),
+            label=df.index.get_level_values('area_from').tolist() +
+                  df.index.get_level_values('area_to').tolist(),
+            color=color_list
+
+        ),
+        link=dict(
+            source=[df.index.get_level_values('area_from').tolist().index(src)
+                    for src in df.index.get_level_values('area_from')],
+            target=[len(df.index.get_level_values('area_from')) +
+                    df.index.get_level_values('area_to').tolist().index(target)
+                    for target in df.index.get_level_values('area_to')],
+            color=[color_dict[area_list[df.index.get_level_values('area_from').tolist().index(src)]]
+                   for src in df.index.get_level_values('area_from')],
+            # opacity= 0.8,
+            value=df['exchange_op_power'].tolist()
+        )
+    )])
+    # Update layout
+    fig.update_layout(
+        autosize=True,
+        height=600,
+        # legend=dict(x=0.8, y=0.98, bgcolor='rgba(255, 255, 255, 0.3)')
+    )
+
+    # Update layout
+    fig.update_layout(title_text="Power Exchange Sankey Diagram")
+    fig.show()
+
+
+def LoadFactorPlot(data, color_dict=GetColorDict_()):
+    df2 = data.planning_conversion_power_capacity.to_dataframe().loc['electricity']
+    df = data.operation_conversion_power.to_dataframe().loc['electricity'].reset_index()[
+        ['area_to', 'conversion_technology',
+         'operation_conversion_power']].groupby(['area_to', 'conversion_technology']).sum()
+    df['planning_conversion_power_capacity'] = df2['planning_conversion_power_capacity']
+    df['load_factor'] = df['operation_conversion_power'] / df['planning_conversion_power_capacity'] / 8760
+    df = df.fillna(0).reset_index()
+
+    # Create a stacked bar plot using Plotly Graph Objects
+    fig = go.Figure()
+
+    for tech in df['conversion_technology'].unique():
+        tech_data = df[df['conversion_technology'] == tech]
+        fig.add_trace(go.Bar(x=tech_data['area_to'], y=tech_data['load_factor'],
+                             name=tech, marker_color=color_dict[tech]))
+
+    # Update layout
+    fig.update_layout(
+        title='Load Factor by Area',
+        # xaxis=dict(title='Area To'),
+        yaxis=dict(title='Load Factor'),
+        # barmode='stack',
+        autosize=True,
+        height=600,
+        # legend=dict(x=0.8, y=0.98, bgcolor='rgba(255, 255, 255, 0.3)')
+    )
+
+    # Show the plot
+    return fig
+
+
+def EnergyMixPlot(data, color_dict=GetColorDict_()):
+    df = data.operation_conversion_power.to_dataframe().loc['electricity'].reset_index()[
+        ['area_to', 'conversion_technology',
+         'operation_conversion_power']].groupby(['area_to', 'conversion_technology']).sum().reset_index()
+
+    # Create a stacked bar plot using Plotly Graph Objects
+    fig = go.Figure()
+
+    for tech in df['conversion_technology'].unique():
+        tech_data = df[df['conversion_technology'] == tech]
+        fig.add_trace(go.Bar(x=tech_data['area_to'], y=tech_data['operation_conversion_power'],
+                             name=tech, marker_color=color_dict[tech]))
+
+    # Update layout
+    fig.update_layout(
+        title='Yearly Energy Poduction Mix by Area',
+        # xaxis=dict(title='Area To'),
+        yaxis=dict(title='Energy Production'),
+        barmode='stack',
+        autosize=True,
+        height=600,
+        # legend=dict(x=0.8, y=0.98, bgcolor='rgba(255, 255, 255, 0.3)')
+    )
+
+    # Show the plot
+    return fig
+
+
+def SystemMixPlot(data, color_dict=GetColorDict_()):
+    df = data.planning_conversion_power_capacity.to_dataframe().loc['electricity']
+    df = df.reset_index()
+
+    # Create a stacked bar plot using Plotly Graph Objects
+    fig = go.Figure()
+
+    for tech in df['conversion_technology'].unique():
+        tech_data = df[df['conversion_technology'] == tech]
+        fig.add_trace(go.Bar(x=tech_data['area_to'], y=tech_data['planning_conversion_power_capacity'],
+                             name=tech, marker_color=color_dict[tech]))
+
+    # Update layout
+    fig.update_layout(
+        title='Planning Conversion Power Capacity by Area',
+        xaxis=dict(title='Area To'),
+        yaxis=dict(title='Planning Conversion Power Capacity'),
+        barmode='stack',
+        autosize=True,
+        height=600,
+        # legend=dict(x=0.8, y=0.98, bgcolor='rgba(255, 255, 255, 0.3)')
+    )
+
+    # Show the plot
+    return fig
+
