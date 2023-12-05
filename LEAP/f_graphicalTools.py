@@ -22,6 +22,7 @@ from io import StringIO
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 
+import plotly.colors as colors
 
 # Global variables
 
@@ -1547,3 +1548,94 @@ def SystemMixPlot(data, color_dict=GetColorDict_()):
     # Show the plot
     return fig
 
+
+
+
+
+
+
+def WeeklyFlexibility(data):
+    areas = data.area_to.values
+    techs = data.conversion_technology.values
+
+    area_dropdown = widgets.Dropdown(
+        options=areas,
+        value=areas[0],
+        description='Select Area:',
+        style={'description_width': 'initial'}
+    )
+
+    tech_dropdown = widgets.Dropdown(
+        options=techs,
+        value=techs[0],
+        description='Select Technology:',
+        style={'description_width': 'initial'}
+    )
+
+
+    # Create an output widget to display the plot
+    output = widgets.Output()
+
+    # Function to update the plot based on the selected area
+    def update_plot(area,tech):
+        # Clear previous output within the specified display_id
+        with output:
+            clear_output(wait=True)
+
+            # Call the AreaHourlyProduction function and display the plot
+            fig = WeeklyFlexibilityPlot(data,area,tech)
+            fig.show()
+
+    # Use the interact function to connect the dropdown with the update_plot function
+    widgets.interact(update_plot, area=area_dropdown,tech = tech_dropdown)
+
+    # Display the initial plot
+    update_plot(areas[0],techs[0])
+
+    # Display the output widget
+    display(output)
+
+
+def WeeklyFlexibilityPlot(data, area, tech):
+    df = data.operation_conversion_power.to_dataframe()
+    df = df.loc['electricity'].loc[area].reset_index()
+    df = df[df['conversion_technology'] == tech][['date', 'operation_conversion_power']].reset_index(drop=True)
+    df['date'] = pd.to_datetime(df['date'])
+    df['day'] = [date.dayofyear for date in df['date']]
+    df['week'] = [(day - 1) // 7 + 1 for day in df['day']]
+    _ = df[["date", "operation_conversion_power", 'week']]
+    __ = pd.DataFrame()
+    for w in _['week'].unique()[:-1]:
+        __[w] = _[_['week'] == w]['operation_conversion_power'].to_list()
+
+    df_q = pd.DataFrame()
+    for i in range(1, 10):
+        df_q['Q=' + str(i / 10)] = __.quantile(q=i / 10, axis=1)
+    df_q.index = df['date'].dt.strftime('%A %H:%M')[:7 * 24]
+
+    # Specify the number of colors you want (10 in this case)
+    num_colors = 10
+
+    # Generate a color scale list based on Viridis
+    # color_scale_list = colors.sequential.Viridis_r[:num_colors][::-1]
+    color_scale_list = colors.sequential.Viridis_r[:num_colors][::-1]
+
+    fig = go.Figure()
+
+    for i, column in enumerate(df_q.columns):
+        if i == 0.5:
+            opacity = 1
+        fig.add_trace(go.Scatter(x=df_q.index, y=df_q[column], mode='lines',
+                                 name=f'{column}',
+                                 # line=dict(width=2, color=color_scale_list[abs(i-4)])))
+                                 line=dict(width=2, color=color_scale_list[i])))
+    fig.update_layout(title='Weekly Flexibility Distribution Over The Year',
+                      # xaxis_title='X-axis Label',  # Replace with your actual x-axis label
+                      yaxis_title='Operation Conversion Power',
+                      xaxis_tickformat='%d %B (%a)<br>%Y',
+                      hovermode="x unified",
+                      autosize=True,
+                      height=600,
+                      xaxis=dict(tickmode='auto', nticks=14))
+
+    return fig
