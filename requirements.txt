@@ -6,7 +6,7 @@ pyomo
 linopy
 mosek
 highspy
-gurobipy
+gurobipy~=10.0.3
 xpress~=9.0.0
 scipy
 openpyxl
