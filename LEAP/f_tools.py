@@ -357,4 +357,4 @@ def download_input_data (input_data_folder: str = "case_studies/eu_7_nodes/data/
         
         # Print success message
         if verbose:
-            print(f'Downloaded {file_name} and saved to {file_to_download}\n Do not sync excel/nc files with git.')
+            print(f'Downloaded {file_name} and saved to {file_to_download}\nDo not sync excel/nc files with git.')
