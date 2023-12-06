@@ -198,7 +198,7 @@ def read_EAP_input_parameters(input_data_folder,file_id ,is_storage=True,is_dema
 
 #TODO add labour_ratio_cost to demand_side_management
 # this is an operation cost
-def labour_ratio_cost(df):  # higher labour costs at night
+def labour_ratio_cost(df: pd.DataFrame):  # higher labour costs at night
     if df.hour in range(7, 17):
         return 1
     elif df.hour in range(17, 23):
@@ -206,7 +206,7 @@ def labour_ratio_cost(df):  # higher labour costs at night
     else:
         return 2
 
-def download_file(url,filename):
+def download_file(url: str, filename: str):
     response = requests.get(url)
     with open(filename, mode="wb") as file:
         file.write(response.content)
@@ -238,10 +238,10 @@ def period_boolean_table(date, period):
     x_of_year_table = x_of_year_xr == x_of_year_values_xr
     return x_of_year_table
 
-def get_index_in(xr,index,subset):
+def get_index_in(xr, index, subset):
     return xr.get_index(index)[xr.get_index(index).isin(subset)]
 
-def select(xr,dic):
+def select(xr, dic):
     reduced_index = {}
     for key in dic:
         reduced_index[key] = get_index_in(xr, key, dic[key])
@@ -304,13 +304,12 @@ def extractEnergyCapacity_l(model):
     return Myres
 
 
-def EnergyAndExchange2Prod(model, EnergyName='energy', exchangeName='Exchange'):
+def EnergyAndExchange2Prod(model, EnergyName: str = 'energy', exchangeName: str = 'Exchange'):
     Variables = {name: model.solution[name].to_dataframe().reset_index() for name in list(model.solution.keys())}
     #Variables["exchange_op_power"].columns = ['area_from', 'area_from_1', 'exchange_op_power']
     area_to = Variables['operation_conversion_power'].area_to.unique()
     production_df = Variables['operation_conversion_power'].pivot(index=["area_to", "date"], columns='conversion_technology', values='operation_conversion_power')
-    Import_Export = Variables['exchange_op_power'].groupby(["area_to", "date"])[['exchange_op_power']].sum()- Variables['exchange_op_power'].\
-        groupby(["area_from", "date"])[['exchange_op_power']].sum()
+    Import_Export = Variables['exchange_op_power'].groupby(["area_to", "date"])[['exchange_op_power']].sum() - Variables['exchange_op_power'].groupby(["area_from", "date"])[['exchange_op_power']].sum()
     #if ((Variables['exchange_op_power'].groupby(["area_to", "date"]).sum()*Variables['exchange_op_power'].\
     #        rename(columns={"area_from":"area_from_1","area_from_1":"area_from"}).groupby(["area_from", "date"]).sum()).sum() >0).bool():
     #    print("Problem with import - export")
