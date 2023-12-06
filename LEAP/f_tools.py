@@ -320,23 +320,34 @@ def EnergyAndExchange2Prod(model, EnergyName='energy', exchangeName='Exchange'):
     return (production_df);
 
 
-def download_input_data(input_data_folder="case_studies/eu_7_nodes/data/"):
-    input_files_dic = {"EU_7_2050.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg",
-                       "EU_7_2050_exogeneous_energy_demand.nc": "https://cloud.minesparis.psl.eu/index.php/s/31tqYN1sndcNirU",
-                       "EU_7_2050_availability.nc": "https://cloud.minesparis.psl.eu/index.php/s/sLpfLJdYQ5ks4YM",
-                       "EU_7_2050_temperature.nc": "https://cloud.minesparis.psl.eu/index.php/s/aALUWGnubUUYQ1I",
-                       "EU_7_2050_reference.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/kSU57U0nq9cSMKy",
-                       "EU_7_2050_Nuke-.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/tu92ikbzjD7DWt3",
-                       "EU_7_2050_Flex+.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/SAV46N1dhw2Xxew",
-                       "EU_7_2050_Nuke+.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/ni3wkVlnmIRuiHD"}
+def download_input_data (input_data_folder: str = "case_studies/eu_7_nodes/data/", verbose: bool = False):
+    input_files_dict = {
+        "EU_7_2050.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg",
+        "EU_7_2050_exogeneous_energy_demand.nc": "https://cloud.minesparis.psl.eu/index.php/s/31tqYN1sndcNirU",
+        "EU_7_2050_availability.nc": "https://cloud.minesparis.psl.eu/index.php/s/sLpfLJdYQ5ks4YM",
+        "EU_7_2050_temperature.nc": "https://cloud.minesparis.psl.eu/index.php/s/aALUWGnubUUYQ1I",
+        "EU_7_2050_reference.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/kSU57U0nq9cSMKy",
+        "EU_7_2050_Nuke-.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/tu92ikbzjD7DWt3",
+        "EU_7_2050_Flex+.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/SAV46N1dhw2Xxew",
+        "EU_7_2050_Nuke+.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/ni3wkVlnmIRuiHD"
+    }
+
+    # Build input data directory
     if not os.path.exists(input_data_folder):
         os.makedirs(input_data_folder)
 
-    for file_name in input_files_dic:
+    for file_name in input_files_dict:
         file_to_download = input_data_folder + file_name
-        if not os.path.isfile(file_to_download):
-            response = requests.get(input_files_dic[file_name] + "/download")
-            with open(file_to_download, mode="wb") as file:
-                file.write(response.content)
-            print(
-                f"Downloaded " + file_name + " and saved to " + file_to_download + "\n Do not sync excel/nc files with git.")
+
+        # Check if file already downloaded
+        if os.path.isfile(file_to_download):
+            continue
+        
+        # Download file
+        response = requests.get(input_files_dict[file_name] + '/download')
+        with open(file_to_download, mode='wb') as file:
+            file.write(response.content)
+        
+        # Print success message
+        if verbose:
+            print(f'Downloaded {file_name} and saved to {file_to_download}\n Do not sync excel/nc files with git.')
