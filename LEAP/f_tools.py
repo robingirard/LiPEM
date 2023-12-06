@@ -1,17 +1,25 @@
-import pandas as pd
-import linopy
-import xarray as xr
-import pandas as pd
-import numpy as np
 import requests
+import numpy as np
+import pandas as pd
+import xarray as xr
+# from sklearn.linear_model import LinearRegression
+import linopy
+# import flox  # Not working for multidim groupby
 
 from LEAP.f_demand_tools import *
-#from sklearn.linear_model import LinearRegression
-#import flox ### not working for multidim groupby
-def read_EAP_input_parameters(input_data_folder,file_id ,is_storage=True,is_demand_management=True,
-                    selected_area_to=None,selected_conversion_technology=None,
-                    selected_storage_technology=None,
-                    verbose = False):
+
+
+
+def read_EAP_input_parameters (
+        input_data_folder,
+        file_id,
+        is_storage: bool = True,
+        is_demand_management: bool = True,
+        selected_area_to = None,
+        selected_conversion_technology = None,
+        selected_storage_technology = None,
+        verbose: bool = False
+    ):
     """
     Read the excel file with input data. Modify the demand according to thermal sensitivity targets.
     fills operation_conversion_availability_factor na with "1"
