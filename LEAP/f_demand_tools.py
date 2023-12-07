@@ -291,8 +291,8 @@ def Profile2Consumption (Profile_df, temperature_df, temperatureThreshold = 14,
 
     PivotedProfile_df['NDifference'] = (PivotedProfile_df['Ete'] - PivotedProfile_df['Hiver'])
     Thermosensibilite = (PivotedProfile_df['NDifference'].loc[0:23] / cte).tolist()
-    ConsoSepareeNew_df = Recompose(ConsoSepareeNew_df,Thermosensibilite)  # TODO: Recompose not defined
-    return(ConsoSepareeNew_df)
+    ConsoSepareeNew_df = Recompose(ConsoSepareeNew_df, Thermosensibilite)  # TODO: Recompose not defined
+    return ConsoSepareeNew_df
 
 
 # TODO: debug code?
