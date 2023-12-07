@@ -248,15 +248,18 @@ def period_boolean_table(date, period):
 
 
 
+# TODO: move to top of file
 def get_index_in(xr, index, subset):
     return xr.get_index(index)[xr.get_index(index).isin(subset)]
 
+# TODO: move to top of file
 def select(xr, dict_):
     reduced_index = dict()
     for key in dict_:
         reduced_index[key] = get_index_in(xr, key, dict_[key])
     return xr.sel(reduced_index)
 
+# TODO: move to top of file
 xr.Dataset.get_index_in = get_index_in
 xr.Dataset.select = select
 
