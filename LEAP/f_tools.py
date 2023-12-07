@@ -206,32 +206,34 @@ def read_EAP_input_parameters (
 
 #TODO add labour_ratio_cost to demand_side_management
 # this is an operation cost
-def labour_ratio_cost(df: pd.DataFrame):  # higher labour costs at night
+def labour_ratio_cost(df: pd.DataFrame) -> float:  # higher labour costs at night
     if df.hour in range(7, 17):
-        return 1
+        return 1.
     elif df.hour in range(17, 23):
         return 1.5
     else:
-        return 2
+        return 2.
 
-def download_file(url: str, filename: str):
+
+def download_file (url: str, filename: str, verbose: bool = False):
     response = requests.get(url)
     with open(filename, mode="wb") as file:
         file.write(response.content)
-    print(f"Downloaded file {filename}")
+    if verbose:
+        print(f"Downloaded file {filename}")
 
 
-def get_subset_netcdf_data(file, subsets):
+def get_subset_netcdf_data (file, subsets):
     ds = xr.open_dataset(file)
-    subset_with_existing_values= {}
+    subset_with_existing_values = dict()
     for dim_name in subsets.keys():
         if not subsets[dim_name] == None:
             existing_values = ds.get_index(dim_name)
             subset_with_existing_values[dim_name] = [v for v in subsets[dim_name] if v in existing_values]
-
     return ds.sel(subset_with_existing_values).load()
 
-def period_boolean_table(date, period):
+
+def period_boolean_table (date, period):
     """
     returns a boolean xarray table with the dimension date x value(period) with date == value(period)
     :param date:
@@ -240,20 +242,19 @@ def period_boolean_table(date, period):
     :return:
     """
     x_of_year = getattr(date.to_period(), period)
-    x_of_year_xr = xr.DataArray(x_of_year, coords={"date": date})
+    x_of_year_xr = xr.DataArray(x_of_year, coords={'date': date})
     x_of_year_values = pd.DataFrame(x_of_year).date.unique()
     x_of_year_values_xr = xr.DataArray(x_of_year_values, coords={period: x_of_year_values})
-    x_of_year_table = x_of_year_xr == x_of_year_values_xr
+    x_of_year_table = (x_of_year_xr == x_of_year_values_xr)
     return x_of_year_table
 
 
-
 # TODO: move to top of file
-def get_index_in(xr, index, subset):
+def get_index_in (xr, index, subset):
     return xr.get_index(index)[xr.get_index(index).isin(subset)]
 
 # TODO: move to top of file
-def select(xr, dict_):
+def select (xr, dict_: dict):
     reduced_index = dict()
     for key in dict_:
         reduced_index[key] = get_index_in(xr, key, dict_[key])
@@ -264,7 +265,7 @@ xr.Dataset.get_index_in = get_index_in
 xr.Dataset.select = select
 
 
-def extractCosts_l(model):
+def extractCosts_l (model):
 
     # Initialize results dictionary
     res = dict()
@@ -288,7 +289,7 @@ def extractCosts_l(model):
     return res  # TODO: Implicitly assuming that the second index is conversion_technology... strange
 
 
-def extractEnergyCapacity_l(model):
+def extractEnergyCapacity_l (model):
 
     # Initialize results dictionary
     res = dict()
@@ -321,7 +322,8 @@ def extractEnergyCapacity_l(model):
     return Myres
 
 
-def EnergyAndExchange2Prod(model, EnergyName: str = 'energy', exchangeName: str = 'Exchange'):  # TODO: rename function, rename input parameters to snake_case
+# TODO: rename function, rename input parameters to snake_case
+def EnergyAndExchange2Prod (model, EnergyName: str = 'energy', exchangeName: str = 'Exchange'):
 
     # Create variables dictionary
     variables_dict = {name: model.solution[name].to_dataframe().reset_index() for name in list(model.solution.keys())}
@@ -351,7 +353,8 @@ def EnergyAndExchange2Prod(model, EnergyName: str = 'energy', exchangeName: str 
 
 
 def download_input_data (input_data_folder: str = "case_studies/eu_7_nodes/data/", verbose: bool = False):
-    input_files_dict = {
+    # TODO: move static dictionary to top of file
+    INPUT_FILES_DICT = {
         "EU_7_2050.xlsx": "https://cloud.minesparis.psl.eu/index.php/s/cyYnD3nV2BJgYeg",
         "EU_7_2050_exogeneous_energy_demand.nc": "https://cloud.minesparis.psl.eu/index.php/s/31tqYN1sndcNirU",
         "EU_7_2050_availability.nc": "https://cloud.minesparis.psl.eu/index.php/s/sLpfLJdYQ5ks4YM",
@@ -366,15 +369,16 @@ def download_input_data (input_data_folder: str = "case_studies/eu_7_nodes/data/
     if not os.path.exists(input_data_folder):
         os.makedirs(input_data_folder)
 
-    for file_name in input_files_dict:
+    for file_name in INPUT_FILES_DICT:
         file_to_download = input_data_folder + file_name
 
         # Check if file already downloaded
         if os.path.isfile(file_to_download):
             continue
         
+        # TODO: use f_tools.download_file()
         # Download file
-        response = requests.get(input_files_dict[file_name] + '/download')
+        response = requests.get(INPUT_FILES_DICT[file_name] + '/download')
         with open(file_to_download, mode='wb') as file:
             file.write(response.content)
         
