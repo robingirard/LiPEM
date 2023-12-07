@@ -246,53 +246,61 @@ def period_boolean_table(date, period):
     x_of_year_table = x_of_year_xr == x_of_year_values_xr
     return x_of_year_table
 
+
+
 def get_index_in(xr, index, subset):
     return xr.get_index(index)[xr.get_index(index).isin(subset)]
 
-def select(xr, dic):
-    reduced_index = {}
-    for key in dic:
-        reduced_index[key] = get_index_in(xr, key, dic[key])
+def select(xr, dict_):
+    reduced_index = dict()
+    for key in dict_:
+        reduced_index[key] = get_index_in(xr, key, dict_[key])
     return xr.sel(reduced_index)
 
-xr.Dataset.get_index_in=get_index_in
+xr.Dataset.get_index_in = get_index_in
 xr.Dataset.select = select
+
 
 def extractCosts_l(model):
 
-    res = {}
+    # Initialize results dictionary
+    res = dict()
     res["operation_energy_cost"] = (model.solution["operation_energy_cost"]/ 10 ** 9).to_dataframe()
     res["operation_energy_cost"].columns = ["Cost_10e9_euros"]
     res["operation_energy_cost"]["type"] = "annual_energy"
     res["planning_conversion_cost"] = (model.solution["planning_conversion_cost"]/ 10 ** 9).to_dataframe()
     res["planning_conversion_cost"].columns = ["Cost_10e9_euros"]
     res["planning_conversion_cost"]["type"] = "installed_capacity"
+    
     if "planning_flexible_demand_cost" in model.solution :
         res["flexible_demand_capacity_cost"]= (model.solution["planning_flexible_demand_cost"]/ 10 ** 9).to_dataframe()
         res["flexible_demand_capacity_cost"].columns = ["Cost_10e9_euros"]
         res["flexible_demand_capacity_cost"]["type"] = "flexible_demand_capacity"
+    
     if "planning_storage_energy_cost" in model.solution:
         res["planning_storage_energy_cost"] = (model.solution["planning_storage_energy_cost"]/ 10 ** 9).to_dataframe()
         res["planning_storage_energy_cost"].columns = ["Cost_10e9_euros"]
         res["planning_storage_energy_cost"]["type"] = "planning_storage_energy_cost"
-    return res ## implicitly assuming second index is conversion_technology... strange
-    # compute total
+    
+    return res  # TODO: Implicitly assuming that the second index is conversion_technology... strange
 
-    return res
 
 def extractEnergyCapacity_l(model):
 
-    res = {}
+    # Initialize results dictionary
+    res = dict()
     res["production"] = (model.solution["operation_conversion_power"]/ 10 ** 6).sum(["date"]).to_dataframe()
     res["production"].columns = ["Energy_TWh"]
     res["production"]["type"] = "annual_energy"
     res["capacity"] = (model.solution["planning_conversion_power_capacity"]/ 10 ** 3).to_dataframe()
     res["capacity"].columns = ["Capacity_GW"]
     res["capacity"]["type"] = "installed_capacity"
-    if "planning_flexible_demand_max_power_increase" in model.solution :
+
+    if "planning_flexible_demand_max_power_increase" in model.solution:
         res["flexconso_capacity"]= (model.solution["planning_flexible_demand_cost"]/ 10 ** 3).to_dataframe()
         res["flexconso_capacity"].columns = ["Capacity_GW"]
         res["flexconso_capacity"]["type"] = "flexible_demand_capacity"
+    
     if "planning_storage_energy_cost" in model.solution:
         res["storage_capacity"] = (model.solution["planning_storage_power_capacity"]/ 10 ** 3).to_dataframe()
         res["storage_capacity"].columns = ["Capacity_GW"]
@@ -304,11 +312,9 @@ def extractEnergyCapacity_l(model):
         res["Variable_storage_out"].columns = ["Energy_TWh"]
         res["Variable_storage_out"]["type"] = "storage_out"
 
-    Myres={}
-    Myres["Capacity_GW"] = pd.concat([res[r] for r in res]).set_index(["type"], append=True)[["Capacity_GW"]].\
-        dropna().rename({"Capacity_GW": "Capacity_GW"})
-    Myres["Energy_TWh"] = pd.concat([res[r] for r in res]).set_index(["type"], append=True)[["Energy_TWh"]].\
-        dropna().rename({"Capacity_GW": "Energy_TWh"})
+    Myres = dict()
+    Myres["Capacity_GW"] = pd.concat([res[r] for r in res]).set_index(["type"], append=True)[["Capacity_GW"]].dropna() .rename({"Capacity_GW": "Capacity_GW"})
+    Myres["Energy_TWh"]  = pd.concat([res[r] for r in res]).set_index(["type"], append=True)[["Energy_TWh"]] .dropna() .rename({"Capacity_GW": "Energy_TWh"})
     return Myres
 
 
