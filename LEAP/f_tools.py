@@ -28,7 +28,7 @@ def read_EAP_input_parameters (
     conversion_technology, energy_vector_in, operation_conversion_availabili, electricity_demand
     if multiple area reads also interconnexions
     if is_storage also reads storage_technology
-    TODO implement demand management
+    TODO: implement demand management
 
     :param InputExcelFolder: folder where the excel file can be found. Should finish with "/" if not empty.
     :param excel_file_name: name of the xls file
@@ -40,173 +40,175 @@ def read_EAP_input_parameters (
     :param verbose: default to False. If True print a message for each step.
     :return:
     """
-    # organisation :
+
+    # Organisation :
     # 1 - convertion -exchange - storage
     # 2 - demand - demand side management
-    xls_file=pd.ExcelFile(input_data_folder+file_id+".xlsx")
-    #TODO create an excel file with only two country to accelerate the code here
-    to_merge = [] ## list to be filled by the different xarray tables obtained from the excel file
+
+
+    # List to be filled by the different xarray tables obtained from the excel file
+    to_merge = list()
+
+    # Load excel file
+    xls_file = pd.ExcelFile(f'{input_data_folder}{file_id}.xlsx')  # TODO: create an excel file with only two country to accelerate the code here
+    
 
 
     ########
-    # Part 1 -- convertion -exchange - storage
+    # Part 1 -- convertion - exchange - storage
     ########
 
-    #conversion technology
-    if verbose : print("Reading conversion_technology")
-    conversion_technology_parameters = pd.read_excel(xls_file, "conversion_technology").dropna().\
-        set_index(["area_to", "conversion_technology","energy_vector_out"]).to_xarray()
+    # Conversion technology (conversion_technology)
+    if verbose: print("Reading conversion_technology")
+    conversion_technology_parameters = pd.read_excel(xls_file, "conversion_technology").dropna().set_index(["area_to", "conversion_technology", "energy_vector_out"]).to_xarray()
     if selected_area_to == None:
-        selected_area_to= list(conversion_technology_parameters["area_to"].to_numpy())
+        selected_area_to = list(conversion_technology_parameters["area_to"].to_numpy())
     if selected_conversion_technology == None:
-        selected_conversion_technology= list(conversion_technology_parameters["conversion_technology"].to_numpy())
-    to_merge.append(conversion_technology_parameters.select({"conversion_technology" : selected_conversion_technology,"area_to": selected_area_to}))
+        selected_conversion_technology = list(conversion_technology_parameters["conversion_technology"].to_numpy())
+    to_merge.append(conversion_technology_parameters.select({"conversion_technology" : selected_conversion_technology, "area_to": selected_area_to}))
 
-    # energy_vector_in
-    if verbose : print("Reading energy_vector_in")
-    selected_energy_vector_in_value = list(np.unique(conversion_technology_parameters.select({"conversion_technology" : selected_conversion_technology,"area_to": selected_area_to})["energy_vector_in_value"].squeeze().to_numpy()))
+    # Energy vector in (energy_vector_in)
+    if verbose: print("Reading energy_vector_in")
+    selected_energy_vector_in_value = list(np.unique(conversion_technology_parameters.select({"conversion_technology" : selected_conversion_technology, "area_to": selected_area_to})["energy_vector_in_value"].squeeze().to_numpy()))
     to_merge.append(
-        pd.read_excel(xls_file, "energy_vector_in").dropna().set_index(["area_to", "energy_vector_in"]).\
-        to_xarray().loc[{"energy_vector_in" : selected_energy_vector_in_value,"area_to": selected_area_to}]
-    )
+        pd.read_excel(xls_file, "energy_vector_in").dropna().set_index(["area_to", "energy_vector_in"]). \
+        to_xarray().loc[{"energy_vector_in" : selected_energy_vector_in_value, "area_to": selected_area_to}])
 
-    # availability time series for conversion means
-    if verbose : print("Reading operation_conversion_availabili")
-    if (os.path.isfile(input_data_folder + file_id+"_availability.nc")):
-        availability = get_subset_netcdf_data(file = input_data_folder + "EU_7_2050_availability.nc",
-                                              subsets= {"conversion_technology" : selected_conversion_technology,
-                                                        "area_to" : selected_area_to})
+    # Availability time series for conversion means
+    if verbose: print("Reading operation_conversion_availabili")
+    path_availability = f'{input_data_folder}{file_id}_availability.nc'
+    if (os.path.isfile(path_availability)):
+        availability = get_subset_netcdf_data(
+            file = input_data_folder + "EU_7_2050_availability.nc",  # TODO: replace with path_availability
+            subsets= {"conversion_technology": selected_conversion_technology, "area_to": selected_area_to})
     else:
-        availability= pd.read_excel(xls_file, "operation_conversion_availabili", parse_dates=['date']). \
+        availability = pd.read_excel(xls_file, "operation_conversion_availabili", parse_dates=['date']). \
             dropna().set_index(["area_to", "date", "conversion_technology"]). \
             to_xarray().select({"conversion_technology": selected_conversion_technology, "area_to": selected_area_to})
-    time_stamp_length=xr.DataArray(data=1, dims=["date"], coords=dict(date=availability.get_index("date"))). \
+    time_stamp_length = xr.DataArray(data=1, dims=["date"], coords=dict(date=availability.get_index("date"))). \
         rename(new_name_or_name_dict="time_stamp_length")
+    # availability.to_netcdf("EU_7_2050_availability.nc")
     to_merge.append(time_stamp_length)
     to_merge.append(availability)
-    #
-    #availability.to_netcdf("EU_7_2050_availability.nc")
-
-    # exchange
-    if len(selected_area_to)>1:
+    
+    # Exchange (interconnections)
+    if len(selected_area_to) > 1:
         if verbose: print("Reading interconnexions")
         to_merge.append(
             pd.read_excel(xls_file, "interconnexions").dropna(). \
             set_index(["area_to", "area_from"]).to_xarray(). \
-            expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1).fillna(0).\
-            select({"area_to": selected_area_to,"area_from": selected_area_to})
-        )
+            expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1).fillna(0). \
+            select({"area_to": selected_area_to, "area_from": selected_area_to}))
 
-
-    #storage technology
+    # Storage technology
     if is_storage:
         if verbose: print("Reading storage_technology")
-        storage_technology= pd.read_excel(xls_file, "storage_technology").set_index(["energy_vector_out","area_to", "storage_technology"]).to_xarray()
+        storage_technology= pd.read_excel(xls_file, "storage_technology").set_index(["energy_vector_out", "area_to", "storage_technology"]).to_xarray()
         if selected_storage_technology == None:
             selected_conversion_technology = list(storage_technology["storage_technology"].to_numpy())
-        to_merge.append(
-            storage_technology.select({"area_to": selected_area_to,"storage_technology" : selected_storage_technology})
-        )
+        to_merge.append(storage_technology.select({"area_to": selected_area_to, "storage_technology": selected_storage_technology}))
 
 
 
     ########
-    # Part 2 -- demand - demand side management (DSM)
+    # Part 2 -- demand - demand-side management (DSM)
     ########
-    # exogenous energy demand
-    if verbose : print("Reading electricity_demand")
-    if os.path.isfile(input_data_folder + file_id+"_exogeneous_energy_demand.nc"):
-        exogenous_energy_demand = get_subset_netcdf_data(file = input_data_folder + "EU_7_2050_exogeneous_energy_demand.nc",
-                                              subsets= {"area_to" : selected_area_to})
+
+    # Exogenous energy demand
+    if verbose: print("Reading electricity_demand")
+    path_exogenous_energy_demand = f'{input_data_folder}{file_id}_exogeneous_energy_demand.nc'  # TODO: typo in filename (exogeneous -> exogenous)
+    if os.path.isfile(path_exogenous_energy_demand):
+        exogenous_energy_demand = get_subset_netcdf_data(
+            file = input_data_folder + "EU_7_2050_exogeneous_energy_demand.nc",  # TODO: replace with path_exogenous_energy_demand
+            subsets= {"area_to" : selected_area_to})
     else:
         exogenous_energy_demand = pd.read_excel(xls_file, "electricity_demand", parse_dates=['date']).dropna(). \
             set_index(["area_to", "date"]).to_xarray().expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1). \
             transpose("energy_vector_out", "area_to", "date").select({"area_to": selected_area_to})
 
-    # change of thermal sensitivity
+    # Extract year (?)
     years = list(set(exogenous_energy_demand.date.to_numpy().astype('datetime64[Y]').astype(int) + 1970))
-    year  = years[0] #TODO issue warning if several years ?
-    if verbose : print("Reading temperature")
+    year = years[0]  # TODO: issue warning if several years?
 
-    if os.path.isfile(input_data_folder + file_id+"_temperature.nc"):
-        temperature = get_subset_netcdf_data(file = input_data_folder + "EU_7_2050_temperature.nc",
-                                              subsets= {"area_to" : selected_area_to})
+    # Change in thermal sensitivity
+    if verbose: print("Reading temperature")
+    path_temperature = f'{input_data_folder}{file_id}_temperature.nc'
+    if os.path.isfile(path_temperature):
+        temperature = get_subset_netcdf_data(
+            file = input_data_folder + "EU_7_2050_temperature.nc",  # TODO: replace with path_temperature
+            subsets= {"area_to" : selected_area_to})
     else:
         temperature = pd.read_excel(xls_file, "temperature", parse_dates=['date']). \
             set_index(["date", "area_to"]).loc[str(year)].to_xarray(). \
             expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1).\
             drop_duplicates(dim="date").select({"area_to": selected_area_to})
-
-    thermal_sensitivity = pd.read_excel(xls_file, "thermal_sensitivity").set_index(["area_to"]).to_xarray(). \
-        expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1)
-    #TODO remove futur warning here
-    warnings.filterwarnings("ignore")
+    thermal_sensitivity = pd.read_excel(xls_file, "thermal_sensitivity").set_index(["area_to"]).to_xarray().expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1)
+    
+    warnings.filterwarnings("ignore")  # TODO: remove FutureWarning here
     decomposed_demand = decompose_demand(temperature, exogenous_energy_demand, temperature_threshold=15)
     exogenous_energy_demand = recompose_demand(decomposed_demand,temperature,thermal_sensitivity,temperature_threshold=15)
     warnings.filterwarnings("default")
-    #TODO add temperature_threshold as a global parameter here
+    # TODO: add temperature_threshold as a global parameter here
     to_merge.append(exogenous_energy_demand)
 
-    #Demandn side management
+    # Demand-side management
     if is_demand_management:
         if verbose: print("Reading demand side management")
-        flexible_demand_table = pd.read_excel(xls_file, "flexible_demand").set_index(["area_to","flexible_demand"]).to_xarray(). \
-            expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1)
+        flexible_demand_table = pd.read_excel(xls_file, "flexible_demand").set_index(["area_to", "flexible_demand"]).to_xarray().expand_dims(dim={"energy_vector_out": ["electricity"]}, axis=1)
         demand_profile = pd.read_excel(xls_file, "demand_profile")
-        # TODO remove futur warning here
-        warnings.filterwarnings("ignore")
-        flexible_demand_to_optimise = compute_flexible_demand_to_optimise(
-            flexible_demand_table,demand_profile,exogenous_energy_demand,temperature)
+        warnings.filterwarnings("ignore")  # TODO: remove FutureWarning here
+        flexible_demand_to_optimise = compute_flexible_demand_to_optimise(flexible_demand_table, demand_profile, exogenous_energy_demand, temperature)
+        # flexible_demand_to_optimise.to_dataframe().groupby(["energy_vector_out", "area_to", "flexible_demand"]).sum()
         warnings.filterwarnings("default")
-        #flexible_demand_to_optimise.to_dataframe().groupby(["energy_vector_out","area_to","flexible_demand"]).sum()
         to_merge.append(flexible_demand_to_optimise)
 
-        ## generate parameter "max power" and add it to flexible_demand_table
-        flexible_demand_table=flexible_demand_table.merge(flexible_demand_to_optimise.to_dataframe().\
+        # Generate parameter "max power" and add it to flexible_demand_table
+        flexible_demand_table = flexible_demand_table.merge(flexible_demand_to_optimise.to_dataframe().\
             groupby(["energy_vector_out","area_to"]).max().to_xarray().flexible_demand_to_optimise. \
             rename(new_name_or_name_dict="flexible_demand_max_power"))
 
         to_merge.append(flexible_demand_table)
 
 
-    #TODO add chp_production
-    ### final merge
+    # TODO: add chp_production
+    # Final merge
     parameters = xr.merge(to_merge)
-
-    parameters["operation_conversion_availability_factor"]=parameters["operation_conversion_availability_factor"].fillna(1) ## 1 is the default value for availability factor
-    parameters["operation_conversion_efficiency"]=parameters["operation_conversion_efficiency"].fillna(0)
+    parameters["operation_conversion_availability_factor"] = parameters["operation_conversion_availability_factor"].fillna(1) ## 1 is the default value for availability factor
+    parameters["operation_conversion_efficiency"] = parameters["operation_conversion_efficiency"].fillna(0)
+    
     return parameters
 
-#TODO add demand profile decomposition according to sector/usage :
-# (1) part of the demand side management profile should be substracted to exogeneous_demand
-# (2) evolution of consumption could be defined sectorwise.
-# below a piece of code that was used in the past for decomposition
-# Profile_df_sans_chauffage=pd.read_csv(InputConsumptionFolder+"ConsumptionDetailedProfiles.csv").\
-#     rename(columns={'heures':'hour',"WeekDay":"day"}).\
-#     replace({"day" :{"Sat": "Samedi" , "Week":"Semaine"  , "Sun": "Dimanche"}}). \
-#     query('UsagesGroupe != "Chauffage"'). \
-#     assign(is_steel=lambda x: x["Nature"].isin(["MineraiMetal"])).\
-#     set_index(["Mois", "hour",'Nature', 'type',"is_steel", 'UsagesGroupe', 'UsageDetail', "day"]).\
-#     groupby(["Mois","day","hour","type","is_steel"]).sum().\
-#     merge(add_day_month_hour(df=ConsoTempeYear_decomposed_df,semaine_simplifie=True,French=True,to_index=True),
-#           how="outer",left_index=True,right_index=True).reset_index().set_index("date")[["type","is_steel","Conso"]]. \
-#     pivot_table(index="date", columns=["type","is_steel"], values='Conso')
-# Profile_df_sans_chauffage.columns = ["Autre","Ind_sans_acier","Ind_acier","Residentiel","Tertiaire"]
-#
-# Profile_df_sans_chauffage=Profile_df_sans_chauffage.loc[:,Profile_df_sans_chauffage.sum(axis=0)>0]
-# Profile_df_n=Profile_df_sans_chauffage.div(Profile_df_sans_chauffage.sum(axis=1), axis=0) ### normalisation par 1 et multiplication
-# for col in Profile_df_sans_chauffage.columns:
-#     Profile_df_sans_chauffage[col]=Profile_df_n[col]*ConsoTempeYear_decomposed_df["NTS_C"]
-#
-# steel_consumption=Profile_df_sans_chauffage.loc[:,"Ind_acier"]
-# steel_consumption.max()
-# steel_consumption[steel_consumption.isna()]=110
-# steel_consumption.isna().sum()
+
+    # TODO: add demand profile decomposition according to sector/usage :
+    # (1) part of the demand side management profile should be substracted to exogeneous_demand
+    # (2) evolution of consumption could be defined sectorwise.
+    # below a piece of code that was used in the past for decomposition
+    # Profile_df_sans_chauffage=pd.read_csv(InputConsumptionFolder+"ConsumptionDetailedProfiles.csv").\
+    #     rename(columns={'heures':'hour',"WeekDay":"day"}).\
+    #     replace({"day" :{"Sat": "Samedi" , "Week":"Semaine"  , "Sun": "Dimanche"}}). \
+    #     query('UsagesGroupe != "Chauffage"'). \
+    #     assign(is_steel=lambda x: x["Nature"].isin(["MineraiMetal"])).\
+    #     set_index(["Mois", "hour",'Nature', 'type',"is_steel", 'UsagesGroupe', 'UsageDetail', "day"]).\
+    #     groupby(["Mois","day","hour","type","is_steel"]).sum().\
+    #     merge(add_day_month_hour(df=ConsoTempeYear_decomposed_df,semaine_simplifie=True,French=True,to_index=True),
+    #           how="outer",left_index=True,right_index=True).reset_index().set_index("date")[["type","is_steel","Conso"]]. \
+    #     pivot_table(index="date", columns=["type","is_steel"], values='Conso')
+    # Profile_df_sans_chauffage.columns = ["Autre","Ind_sans_acier","Ind_acier","Residentiel","Tertiaire"]
+    #
+    # Profile_df_sans_chauffage=Profile_df_sans_chauffage.loc[:,Profile_df_sans_chauffage.sum(axis=0)>0]
+    # Profile_df_n=Profile_df_sans_chauffage.div(Profile_df_sans_chauffage.sum(axis=1), axis=0) ### normalisation par 1 et multiplication
+    # for col in Profile_df_sans_chauffage.columns:
+    #     Profile_df_sans_chauffage[col]=Profile_df_n[col]*ConsoTempeYear_decomposed_df["NTS_C"]
+    #
+    # steel_consumption=Profile_df_sans_chauffage.loc[:,"Ind_acier"]
+    # steel_consumption.max()
+    # steel_consumption[steel_consumption.isna()]=110
+    # steel_consumption.isna().sum()
 
 
-#TODO add labour_ratio_cost to demand_side_management
-# this is an operation cost
-def labour_ratio_cost(df: pd.DataFrame) -> float:  # higher labour costs at night
+# TODO: add labour_ratio_cost to demand_side_management
+# This is an operation cost
+def labour_ratio_cost(df: pd.DataFrame) -> float:  # Higher labour costs at night
     if df.hour in range(7, 17):
         return 1.
     elif df.hour in range(17, 23):
