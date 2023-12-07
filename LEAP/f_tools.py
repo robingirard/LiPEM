@@ -312,19 +312,33 @@ def extractEnergyCapacity_l(model):
     return Myres
 
 
-def EnergyAndExchange2Prod(model, EnergyName: str = 'energy', exchangeName: str = 'Exchange'):
-    Variables = {name: model.solution[name].to_dataframe().reset_index() for name in list(model.solution.keys())}
-    #Variables["exchange_op_power"].columns = ['area_from', 'area_from_1', 'exchange_op_power']
-    area_to = Variables['operation_conversion_power'].area_to.unique()
-    production_df = Variables['operation_conversion_power'].pivot(index=["area_to", "date"], columns='conversion_technology', values='operation_conversion_power')
-    Import_Export = Variables['exchange_op_power'].groupby(["area_to", "date"])[['exchange_op_power']].sum() - Variables['exchange_op_power'].groupby(["area_from", "date"])[['exchange_op_power']].sum()
-    #if ((Variables['exchange_op_power'].groupby(["area_to", "date"]).sum()*Variables['exchange_op_power'].\
-    #        rename(columns={"area_from":"area_from_1","area_from_1":"area_from"}).groupby(["area_from", "date"]).sum()).sum() >0).bool():
-    #    print("Problem with import - export")
+def EnergyAndExchange2Prod(model, EnergyName: str = 'energy', exchangeName: str = 'Exchange'):  # TODO: rename function, rename input parameters to snake_case
 
-    production_df = production_df.merge(Import_Export, how='inner', left_on=["area_to", "date"], right_on=["area_to", "date"])
-    # exchange analysis
-    return (production_df);
+    # Create variables dictionary
+    variables_dict = {name: model.solution[name].to_dataframe().reset_index() for name in list(model.solution.keys())}
+    # variables_dict['exchange_op_power'].columns = ['area_from', 'area_from_1', 'exchange_op_power']
+    # area_to = variables_dict['operation_conversion_power'].area_to.unique()
+
+    # Compute production dataframe
+    production_df = variables_dict['operation_conversion_power'].pivot(
+        index=["area_to", "date"],
+        columns='conversion_technology',
+        values='operation_conversion_power'
+    )
+    
+    # Calculate import - export
+    import_export = \
+        variables_dict['exchange_op_power'].groupby(["area_to", "date"])[['exchange_op_power']].sum() - \
+        variables_dict['exchange_op_power'].groupby(["area_from", "date"])[['exchange_op_power']].sum()
+    
+    # # Check
+    # if ((variables_dict['exchange_op_power'].groupby(["area_to", "date"]).sum() * variables_dict['exchange_op_power'].rename(columns={"area_from": "area_from_1", "area_from_1": "area_from"}).groupby(["area_from", "date"]).sum()).sum() > 0).bool():
+    #     print("Problem with import - export")
+
+    # Update production dataframe
+    production_df = production_df.merge(import_export, how='inner', left_on=['area_to', 'date'], right_on=['area_to', 'date'])
+    
+    return (production_df)
 
 
 def download_input_data (input_data_folder: str = "case_studies/eu_7_nodes/data/", verbose: bool = False):
