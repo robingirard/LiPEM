@@ -159,7 +159,7 @@ def read_EAP_input_parameters (
             flexible_demand_table,demand_profile,exogenous_energy_demand,temperature)
         warnings.filterwarnings("default")
         #flexible_demand_to_optimise.to_dataframe().groupby(["energy_vector_out","area_to","flexible_demand"]).sum()
-        to_merge.append(flexible_demand_to_optimise)
+        to_merge.append(flexible_demand_to_optimise.select({"area_to": selected_area_to}))
 
         ## generate parameter "max power" and add it to flexible_demand_table
         flexible_demand_table=flexible_demand_table.merge(flexible_demand_to_optimise.to_dataframe().\
