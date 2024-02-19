@@ -1,4 +1,4 @@
-# Linopy Energy Alternative Planning (LEAP)
+# Linopy Prospective Energy Modelling (liPEM)
 Multi-energy system planning tools based on [linopy](https://github.com/PyPSA/linopy)
 
 This project contains code and data to model the energy system. 
@@ -20,7 +20,7 @@ The installation relies on the use of a conda environment. Instruction is below
 ## 1 - Installations  <a class="anchor" id="installations"></a>
 
 You need to have conda installed and to clone le project 
-(either by cloning [Git folder](https://github.com/robingirard/LEAP) or just by downloading the [zip](https://github.com/robingirard/LEAP/archive/refs/heads/main.zip) file associated to the project)
+(either by cloning [Git folder](https://github.com/robingirard/LiPEM) or just by downloading the [zip](https://github.com/robingirard/LiPEM/archive/refs/heads/main.zip) file associated to the project)
 
 * [Anaconda 3.8 distribution](https://www.anaconda.com/distribution/) or [Miniconda3 distribution](https://docs.conda.io/en/latest/miniconda.html)
 * To clone LEAP's Gitlab repository, [Git](https://git-scm.com/downloads) (On Windows, [Git for Windows](https://git-for-windows.github.io/) is preferred)
@@ -50,13 +50,13 @@ See the corresponding [README](case_studies/README.md). You can add your own cas
 
 ## 3- LEAP folder <a class="anchor" id="functions"></a>
 Contains:  
- - [tools](LEAP/f_tools.py) that can be used to facilitate the interface between optimisation models results and parameters and panda. 
+ - [tools](LiPEM/f_tools.py) that can be used to facilitate the interface between optimisation models results and parameters and panda. 
  - a set of generic models : 
-   - [model_single_horizon_multi_energy.py](LEAP/model_single_horizon_multi_energy.py), used in case study [eu_7_nodes](case_studies/eu_7_nodes/README.md)
+   - [model_single_horizon_multi_energy.py](LiPEM/model_single_horizon_multi_energy.py), used in case study [eu_7_nodes](case_studies/eu_7_nodes/README.md)
    - multi-horizon multienergy comming soon
    - you can add you own models here
- - demand modeling tools in ([f_consumptionModels.py](LEAP/f_demand_tools.py)) 
- - [graphical tools](LEAP/f_graphicalTools.py).
+ - demand modeling tools in ([f_consumptionModels.py](LiPEM/f_demand_tools.py)) 
+ - [graphical tools](LiPEM/f_graphicalTools.py).
 
 ## 4 Pycharm tips  <a class="anchor" id="pycharm"></a>
 If you're using PyCharm you should fix the environement in settings by choosing the right "python interpreter"
