@@ -1,4 +1,4 @@
-name : LEAP
+name : LiPEM
 channels:
   - conda-forge
   - defaults

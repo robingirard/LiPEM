@@ -4,7 +4,7 @@ from linopy import Model
 import os
 import pandas as pd
 import subprocess as sub
-from LEAP.f_tools import *
+from LiPEM.f_tools import *
 
 
 def build_single_horizon_multi_energy_LEAP_model(parameters):

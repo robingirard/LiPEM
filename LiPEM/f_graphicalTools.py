@@ -1223,12 +1223,12 @@ def marimekko_2(df,ColorY_var_name,horizontalX_var_name,TextureX_var_name,color_
 
 
 ##################################################################################
-########################  Part added for the LEAP course  ########################
+########################  Part added for the LiPEM course  ########################
 ##################################################################################
 
 # def GetColorDict_():
 #     # Reload color_dict from the JSON file
-#     with open('LEAP/metadata/' + 'color_dict.json', 'r') as json_file:
+#     with open('LiPEM/metadata/' + 'color_dict.json', 'r') as json_file:
 #         reloaded_color_dict = json.load(json_file)
 #
 #     # Now, reloaded_color_dict contains the same values as the original color_dict

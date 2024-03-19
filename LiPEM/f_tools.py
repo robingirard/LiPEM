@@ -6,7 +6,7 @@ import xarray as xr
 import linopy
 # import flox  # Not working for multidim groupby
 
-from LEAP.f_demand_tools import *
+from LiPEM.f_demand_tools import *
 
 
 
